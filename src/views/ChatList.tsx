@@ -20,11 +20,11 @@ export function ChatList() {
   useEffect(() => { void load(); }, []);
 
   const create = async () => {
-    await api.post("/conversations", { title: title.trim() || undefined, project_id: projectId || null });
+    const data = await api.post<{ conversation: Conversation }>("/conversations", { title: title.trim() || undefined, project_id: projectId || null });
     setCreating(false);
     setTitle("");
     showToast("会話を作成しました");
-    await load();
+    goto("chat-detail", data.conversation.id);
   };
 
   const remove = async (id: string) => {
