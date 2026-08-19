@@ -137,11 +137,28 @@ await step("Files一覧が表示される (個人領域)", async () => {
   if (!body.includes("アップロード")) throw new Error("Files UIなし");
 });
 
-await step("Agents一覧が表示される", async () => {
+await step("Agents一覧が表示される (新しいAgentボタン)", async () => {
   await page.click('.nav a:has-text("Agents")');
   await page.waitForSelector(".tbl tbody tr", { timeout: 10000 });
   const body = await page.textContent(".main");
   if (!body.includes("Sandbox")) throw new Error("Agents UIなし");
+  if (!body.includes("新しいAgent")) throw new Error("「新しいAgent」ボタンなし");
+});
+
+await step("新しいAgent から Agentを作成できる (Work実行として登録)", async () => {
+  await page.click('button:has-text("新しいAgent")');
+  await page.waitForSelector("#agent-name", { timeout: 5000 });
+  await page.fill("#agent-name", "E2E検証エージェント");
+  await page.fill("#agent-goal", "ブラウザE2Eで作成した検証用エージェント");
+  await page.click(".modal__foot .btn--primary");
+  await page.waitForSelector(".work-grid", { timeout: 10000 });
+  const goal = await page.textContent(".work-grid");
+  if (!goal.includes("E2E検証エージェント")) throw new Error("AgentのGoalがWork詳細に表示されていません");
+  // Work一覧へ戻り、一覧にも反映されていることを確認
+  await page.click('.nav a:has-text("Agents")');
+  await page.waitForSelector(".tbl tbody tr", { timeout: 10000 });
+  const list = await page.textContent(".tbl");
+  if (!list.includes("E2E検証エージェント")) throw new Error("Agent一覧に反映されていません");
 });
 
 await step("Admin (管理者) が表示される", async () => {

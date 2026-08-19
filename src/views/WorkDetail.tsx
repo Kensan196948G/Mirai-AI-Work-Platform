@@ -23,7 +23,8 @@ export function WorkDetail({ workId }: { workId: string }) {
 
   const load = useCallback(async () => {
     try {
-      setWork(await api.get<WorkDetail>(`/works/${id}`));
+      const data = await api.get<{ work: WorkDetail }>(`/works/${id}`);
+      setWork(data.work);
       setError(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "読み込みに失敗しました。");
