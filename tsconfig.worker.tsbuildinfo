@@ -1,0 +1,1 @@
+{"root":["./worker/index.ts","./worker/src/ai.ts","./worker/src/auth.ts","./worker/src/shared.ts","./worker/src/storage.ts","./worker/src/types.ts"],"version":"5.9.3"}

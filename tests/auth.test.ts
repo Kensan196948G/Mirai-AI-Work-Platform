@@ -1,0 +1,46 @@
+// ============================================================================
+// 認証ロジックのテスト (PBKDF2 ハッシュ・照合・セッショントークン)
+// ============================================================================
+import { describe, expect, it } from "vitest";
+import { hashPassword, verifyPassword, generateSessionToken, sha256Hex } from "../worker/src/auth";
+
+describe("hashPassword / verifyPassword", () => {
+  it("生成したハッシュでパスワードを照合できる", async () => {
+    const hash = await hashPassword("mirai-demo");
+    expect(hash.startsWith("pbkdf2$100000$")).toBe(true);
+    expect(await verifyPassword("mirai-demo", hash)).toBe(true);
+  });
+
+  it("誤ったパスワードを拒否する", async () => {
+    const hash = await hashPassword("correct-password");
+    expect(await verifyPassword("wrong-password", hash)).toBe(false);
+  });
+
+  it("不正な形式のハッシュを拒否する", async () => {
+    expect(await verifyPassword("x", "plaintext")).toBe(false);
+    expect(await verifyPassword("x", "bcrypt$10$abc")).toBe(false);
+  });
+
+  it("同一パスワードでもソルトにより異なるハッシュになる", async () => {
+    const a = await hashPassword("same");
+    const b = await hashPassword("same");
+    expect(a).not.toBe(b);
+    expect(await verifyPassword("same", a)).toBe(true);
+    expect(await verifyPassword("same", b)).toBe(true);
+  });
+});
+
+describe("generateSessionToken / sha256Hex", () => {
+  it("トークンとハッシュが生成され、ハッシュで照合できる", () => {
+    const { token, tokenHash } = generateSessionToken();
+    expect(token.length).toBeGreaterThanOrEqual(32);
+    expect(sha256Hex(token)).toBe(tokenHash);
+    expect(sha256Hex(token)).not.toBe(sha256Hex(token + "x"));
+  });
+
+  it("トークンは毎回異なる", () => {
+    const a = generateSessionToken().token;
+    const b = generateSessionToken().token;
+    expect(a).not.toBe(b);
+  });
+});

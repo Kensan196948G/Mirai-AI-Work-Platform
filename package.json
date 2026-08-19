@@ -1,0 +1,58 @@
+{
+  "name": "mirai-ai-work-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mirai AI Work Platform — 社内向け AI ワークプラットフォーム (Chat / Work / Projects / Files / Agents / Admin)。Cloudflare Workers + Hono + Neon PostgreSQL + React SPA。",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "build:frontend": "vite build",
+    "build:production-api": "VITE_USE_MOCK_API=false npm run build",
+    "build:mvp": "VITE_USE_MOCK_API=false VITE_API_BASE_URL=https://mirai-ai-mvp.mirai-dx-platform.com VITE_DEMO_BANNER=true vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "security:scan": "node scripts/security-scan.mjs",
+    "verify": "npm run lint && npm run test && npm run build && npm run security:scan",
+    "worker:dev": "wrangler dev worker/index.ts",
+    "worker:deploy:dry-run": "wrangler deploy worker/index.ts --dry-run",
+    "worker:deploy": "wrangler deploy worker/index.ts",
+    "mvp:dry-run": "npm run build:mvp && wrangler deploy --env mvp --dry-run",
+    "mvp:deploy": "npm run build:mvp && wrangler deploy --env mvp",
+    "db:migrate": "node scripts/apply-migrations.mjs",
+    "db:seed": "node scripts/seed.mjs",
+    "mvp:smoke": "node scripts/mvp-smoke.mjs",
+    "verify:db": "node scripts/verify-db.mjs"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.2",
+    "@neondatabase/serverless": "^1.0.2",
+    "hono": "^4.10.7",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260712.1",
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.11.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0",
+    "vite": "^8.1.4",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.110.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
