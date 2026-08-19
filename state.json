@@ -2,12 +2,12 @@
   "project": "Mirai-AI-Work-Platform",
   "repo": "Kensan196948G/Mirai-AI-Work-Platform",
   "updated_at": "2026-08-19",
-  "phase": "mvp-release",
+  "phase": "production",
   "status": {
     "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com",
     "prod_url": "https://ai-work.mirai-dx-platform.com",
     "mvp_deployed": true,
-    "prod_deployed": false,
+    "prod_deployed": true,
     "neon_db": "mirai_ai_work_platform",
     "neon_verify_db": "mirai_ai_work_platform_verify"
   },
@@ -17,7 +17,9 @@
     "browser_e2e": "16/16",
     "db_checks": "11/11",
     "verify": "PASS",
-    "security_scan": "PASS"
+    "security_scan": "PASS",
+    "production_e2e": "16/16",
+    "production_logs": "exceptions=0"
   },
   "ai": {
     "mvp_provider": "demo",
@@ -31,5 +33,11 @@
     "ファイル実体はストレージ層 — クラウドMVPはメタデータ管理",
     "SSO/MFA/OneDrive/SharePoint はスコープ外 (保留)",
     "Cloudflare Access は本番でも未適用 — ローカル認証 (将来適用検討)"
-  ]
+  ],
+  "deploy": {
+    "pr1": "squash merged (ee3462e)",
+    "pr2": "squash merged (a37043e)",
+    "prod_url": "https://ai-work.mirai-dx-platform.com",
+    "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com"
+  }
 }
