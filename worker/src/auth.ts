@@ -101,13 +101,15 @@ export function getSessionToken(c: ReqCtx): string | null {
   return null;
 }
 
-/** ローカル検証専用バイパス (ALLOW_LOCAL_AUTH_BYPASS=true 時のみ) */
+/** ローカル検証専用バイパス (ALLOW_LOCAL_AUTH_BYPASS=true 時のみ)。
+ *  既存ユーザー (DB内) としての認証代行のみを行い、RBAC判定は通常どおり
+ *  サーバー側で行うため、権限差の検証も可能。 */
 export function getBypassLoginId(c: ReqCtx, env: Env): string | null {
   if (env.ALLOW_LOCAL_AUTH_BYPASS !== "true") return null;
   const loginId = c.req.header("X-Demo-User");
   if (!loginId) return null;
   const allowed = (env.ADMIN_LOGIN_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  // バイパス時は設定済みユーザーのみ許可 (デフォルトは admin)
+  // バイパス時は指定ユーザーのみ許可 (未指定なら既存ユーザー全員を許可)
   if (allowed.length > 0 && !allowed.includes(loginId)) return null;
   return loginId;
 }

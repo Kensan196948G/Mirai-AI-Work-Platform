@@ -399,9 +399,8 @@ app.post("/api/v1/works", zValidator("json", workCreateSchema), async (c) => {
   // Work 作成 → 即時 Plan 生成 (awaiting_review)
   const wrows = await db(c)`
     INSERT INTO works (user_id, project_id, goal, constraints, status)
-    VALUES (${user.id}, ${project_id ?? null}, ${goal}, ${constraints ?? ""}, 'planning')
+    VALUES (${user.id}, ${project_id ?? null}, ${goal}, ${constraints ?? ""}, 'awaiting_review')
     RETURNING *`;
-  await db(c)`UPDATE works SET status = 'awaiting_review', updated_at = now() WHERE id = ${wrows[0].id}`;
 
   const plan = generatePlan(goal);
   const rrows = await db(c)`
