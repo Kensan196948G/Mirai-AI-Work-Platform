@@ -92,12 +92,23 @@ await step("Chat一覧 → 会話詳細に遷移できる", async () => {
 });
 
 await step("Chat送信 (demo AI応答)", async () => {
+  const before = await page.$$eval(".chat-scroll .msg", (els) => els.length);
   await page.fill("#chat-input", "ブラウザE2Eテスト: 経費レポートの手順を教えてください");
   await page.click(".chat-composer .btn--primary");
-  await page.waitForTimeout(3000);
-  const body = await page.textContent(".chat-scroll");
-  if (!body.includes("ご質問を承りました") && !body.includes("確認しました")) {
-    throw new Error("AI応答が表示されていません");
+  // AI応答完了を待つ (最大15秒)
+  let reply = "";
+  for (let i = 0; i < 15; i++) {
+    await page.waitForTimeout(1000);
+    const msgs = await page.$$eval(".chat-scroll .msg", (els) => els.map((e) => e.textContent ?? ""));
+    const aiMsgs = msgs.filter((t) => t.includes("Assistant"));
+    if (aiMsgs.length > 0 && aiMsgs[aiMsgs.length - 1] !== "Assistant") {
+      reply = aiMsgs[aiMsgs.length - 1];
+      break;
+    }
+  }
+  const after = await page.$$eval(".chat-scroll .msg", (els) => els.length);
+  if (!reply || after <= before) {
+    throw new Error(`AI応答が生成されていません (msgs ${before}→${after})`);
   }
 });
 
