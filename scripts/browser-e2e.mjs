@@ -170,6 +170,76 @@ await step("Admin (管理者) が表示される", async () => {
   if (!body.includes("ストレージ")) throw new Error("Adminストレージパネルなし");
 });
 
+await step("Admin Project管理: 編集できる", async () => {
+  await page.click('.tab:has-text("Project管理")');
+  await page.waitForSelector('.card .tbl tbody tr', { timeout: 15000 });
+  // 編集対象の行を特定 (最初の行を編集し、元の名前に戻す)
+  const firstName = await page.$eval(".card .tbl tbody tr:first-child .cell-title", (el) => el.textContent ?? "");
+  await page.click('.card .tbl tbody tr:first-child button[aria-label="編集"]');
+  await page.waitForSelector("#ap-name", { timeout: 8000 });
+  await page.fill("#ap-name", firstName + " (E2E)");
+  await page.click(".modal__foot .btn--primary");
+  await page.waitForTimeout(1800);
+  const edited = await page.textContent(".card .tbl");
+  if (!edited.includes(firstName + " (E2E)")) throw new Error("編集が反映されていません");
+  // 元に戻す
+  await page.click('.card .tbl tbody tr:first-child button[aria-label="編集"]');
+  await page.waitForSelector("#ap-name", { timeout: 8000 });
+  await page.fill("#ap-name", firstName);
+  await page.click(".modal__foot .btn--primary");
+  await page.waitForTimeout(1500);
+});
+
+await step("Admin Project管理: 削除できる (検証用Projectを作成→削除)", async () => {
+  // 削除対象の検証用ProjectをAPIで作成 (管理者セッション)
+  const created = await page.evaluate(async () => {
+    const res = await fetch("/api/v1/projects", {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "E2E削除検証", folder_name: "e2e-delete-check", description: "E2Eで削除検証用に作成", storage_quota_bytes: 53687091200 }),
+    });
+    return { ok: res.ok, body: await res.json() };
+  });
+  if (!created.ok) throw new Error("検証用Project作成失敗");
+  await page.waitForTimeout(800);
+  // 一覧を再読込 (タブ切替でリロード)
+  await page.click('.tab:has-text("利用者管理")');
+  await page.waitForTimeout(500);
+  await page.click('.tab:has-text("Project管理")');
+  await page.waitForSelector('.card .tbl tbody tr', { timeout: 15000 });
+  // 該当行を削除
+  const rowHandle = await page.$(`.card .tbl tbody tr:has-text("E2E削除検証")`);
+  if (!rowHandle) throw new Error("削除対象行が見つかりません");
+  page.once("dialog", (d) => d.accept());
+  const delBtn = await rowHandle.$('button[aria-label="削除"]');
+  if (!delBtn) throw new Error("削除ボタンが見つかりません");
+  await delBtn.click();
+  await page.waitForTimeout(2000);
+  const after = await page.textContent(".card .tbl");
+  if (after.includes("E2E削除検証")) throw new Error("削除が反映されていません");
+});
+
+await step("Admin AI設定: APIキー保存→テスト→クリアが機能する", async () => {
+  await page.click('.tab:has-text("AI設定")');
+  await page.waitForSelector("#ai-apikey", { timeout: 10000 });
+  await page.fill("#ai-apikey", "sk-e2e-test-key-123456");
+  await page.click("#ai-key-save");
+  await page.waitForTimeout(1800);
+  let body = await page.textContent(".main");
+  if (!body.includes("暗号化して保存")) throw new Error("キー保存メッセージなし");
+  if (!body.includes("設定済み")) throw new Error("保存状態が反映されていません");
+  await page.click("#ai-key-test");
+  await page.waitForTimeout(3000);
+  body = await page.textContent(".main");
+  if (!/接続成功|接続失敗/.test(body)) throw new Error("テスト接続結果が表示されていません");
+  page.once("dialog", (d) => d.accept());
+  await page.click("#ai-key-clear");
+  await page.waitForTimeout(1800);
+  body = await page.textContent(".main");
+  if (!body.includes("クリアしました")) throw new Error("クリアメッセージなし");
+  if (!body.includes("未設定")) throw new Error("クリア後も設定済みのまま");
+});
+
 await step("レスポンシブ: 幅375pxでナビがアイコンのみになる", async () => {
   await page.setViewportSize({ width: 375, height: 700 });
   await page.waitForTimeout(600);

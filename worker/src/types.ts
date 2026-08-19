@@ -6,6 +6,7 @@
 export type Env = {
   DATABASE_URL?: string;
   DEEPSEEK_API_KEY?: string;
+  AI_KEY_ENC_KEY?: string;
   AI_PROVIDER?: string;
   AI_MODEL?: string;
   AI_ENABLED?: string;

@@ -34,9 +34,10 @@ export class DeepSeekProvider implements AiProvider {
   enabled: boolean;
   private apiKey: string;
 
-  constructor(env: Env) {
+  constructor(env: Env, apiKeyOverride?: string) {
     this.model = env.AI_MODEL ?? "deepseek-chat";
-    this.apiKey = env.DEEPSEEK_API_KEY ?? "";
+    // Admin画面で保存された暗号化キー (apiKeyOverride) を env より優先する
+    this.apiKey = (apiKeyOverride && apiKeyOverride.trim() !== "") ? apiKeyOverride : (env.DEEPSEEK_API_KEY ?? "");
     this.enabled = env.AI_ENABLED === "true" && this.apiKey !== "";
   }
 
@@ -122,17 +123,17 @@ export class DemoAiProvider implements AiProvider {
 // ---------------------------------------------------------------------------
 // 提供者選択
 // ---------------------------------------------------------------------------
-export function createProvider(env: Env): AiProvider {
+export function createProvider(env: Env, apiKeyOverride?: string): AiProvider {
   const provider = (env.AI_PROVIDER ?? "demo").toLowerCase();
   if (provider === "deepseek") {
-    return new DeepSeekProvider(env);
+    return new DeepSeekProvider(env, apiKeyOverride);
   }
   return new DemoAiProvider(env);
 }
 
 /** 接続テスト (Admin AI設定用) */
-export async function testAiConnection(env: Env): Promise<{ ok: boolean; message: string; provider: string; model: string }> {
-  const provider = createProvider(env);
+export async function testAiConnection(env: Env, apiKeyOverride?: string): Promise<{ ok: boolean; message: string; provider: string; model: string }> {
+  const provider = createProvider(env, apiKeyOverride);
   if (provider.name === "deepseek" && !provider.enabled) {
     return { ok: false, message: "DEEPSEEK_API_KEY が未設定です。Secret に登録してください。", provider: provider.name, model: provider.model };
   }
@@ -148,4 +149,46 @@ export async function testAiConnection(env: Env): Promise<{ ok: boolean; message
 export function checkInputLength(content: string, env: Env): { ok: boolean; maxChars: number } {
   const maxChars = Number(env.MAX_INPUT_CHARS ?? 8000);
   return { ok: content.length <= maxChars, maxChars };
+}
+
+// ---------------------------------------------------------------------------
+// APIキー暗号化保存 (AES-GCM)。鍵は Secret AI_KEY_ENC_KEY (hex 32byte) から取得。
+// DBには iv:ct 形式で保存し、平文・復号可能形式で保持しない。
+// ---------------------------------------------------------------------------
+function toHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function hexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}
+
+export function hasEncryptionKey(env: Env): boolean {
+  const key = env.AI_KEY_ENC_KEY ?? "";
+  return /^[0-9a-f]{64}$/i.test(key);
+}
+
+export async function encryptApiKey(env: Env, plain: string): Promise<string> {
+  if (!hasEncryptionKey(env)) {
+    throw new Error("AI_KEY_ENC_KEY (Secret) が設定されていないためAPIキーを保存できません。");
+  }
+  const key = await crypto.subtle.importKey("raw", hexToBytes(env.AI_KEY_ENC_KEY!), "AES-GCM", false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(plain),
+  );
+  return `v1:${toHex(iv.buffer)}:${toHex(ct)}`;
+}
+
+export async function decryptApiKey(env: Env, stored: string): Promise<string> {
+  const parts = stored.split(":");
+  if (parts.length !== 3 || parts[0] !== "v1") throw new Error("保存形式が不正です。");
+  const key = await crypto.subtle.importKey("raw", hexToBytes(env.AI_KEY_ENC_KEY!), "AES-GCM", false, ["decrypt"]);
+  const iv = hexToBytes(parts[1]);
+  const ct = hexToBytes(parts[2]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
+  return new TextDecoder().decode(pt);
 }
