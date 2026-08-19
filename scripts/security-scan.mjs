@@ -48,12 +48,13 @@ function walk(dir) {
 
 walk(ROOT);
 
-// .env が git 管理されていないこと
+// .env が git 管理されていないこと (.env.example はテンプレートのため除外)
 try {
   const tracked = execSync("git ls-files", { cwd: ROOT, encoding: "utf-8" });
   for (const line of tracked.split("\n")) {
-    if (/^\.env($|\.)/.test(line.trim())) {
-      console.error(`SECURITY: 秘密ファイル ${line.trim()} がgit管理されています`);
+    const name = line.trim();
+    if (/^\.env($|\.)/.test(name) && !name.endsWith(".env.example")) {
+      console.error(`SECURITY: 秘密ファイル ${name} がgit管理されています`);
       failures++;
     }
   }
