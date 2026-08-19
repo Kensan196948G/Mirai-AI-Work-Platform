@@ -91,10 +91,10 @@ export function WorkDetail({ workId }: { workId: string }) {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <button className="iconbtn" onClick={() => goto("work-list")} aria-label="Work一覧に戻る" style={{ marginLeft: -4 }}><Icon name="back" /></button>
-            <span className="kicker">Work #{work.id.slice(0, 8)}</span>
+            <span className="kicker">Work #{(work.id ?? "").slice(0, 8)}</span>
             <Pill status={work.status} />
           </div>
-          <h1>{work.goal.slice(0, 60)}</h1>
+          <h1>{(work.goal ?? "").slice(0, 60)}</h1>
           <div className="sub">
             <span className="row__project">{work.project_name ?? "個人ワークスペース"}</span>
             <span>{work.run?.model ?? "deepseek-chat"}</span>
@@ -139,7 +139,7 @@ export function WorkDetail({ workId }: { workId: string }) {
               ) : (
                 <ol className="timeline">
                   {plan.map((title, i) => {
-                    const task = work.tasks.find((t) => t.sequence === i);
+                    const task = (work.tasks ?? []).find((t) => t.sequence === i);
                     const state = task?.status ?? "pending";
                     const cls = state === "succeeded" ? "done" : state === "running" ? "active" : state === "failed" ? "err" : "";
                     return (
@@ -163,9 +163,9 @@ export function WorkDetail({ workId }: { workId: string }) {
           <div className="card">
             <div className="card__head"><h2>Tool 実行の要約</h2></div>
             <div className="card__body">
-              {work.tasks.some((t) => t.tool_log?.length) ? (
+              {(work.tasks ?? []).some((t) => t.tool_log?.length) ? (
                 <ul className="rows">
-                  {work.tasks.filter((t) => t.tool_log?.length).map((t) => (
+                  {(work.tasks ?? []).filter((t) => t.tool_log?.length).map((t) => (
                     <li className="row" key={t.id}>
                       <span className="row__ic"><Icon name="work" /></span>
                       <span className="row__main">
@@ -189,10 +189,10 @@ export function WorkDetail({ workId }: { workId: string }) {
           <div className="card">
             <div className="card__head"><h2>Artifacts</h2></div>
             <div className="card__body">
-              {work.artifacts.length === 0 ? (
+              {(work.artifacts ?? []).length === 0 ? (
                 <p className="muted" style={{ fontSize: 12.5, margin: 0 }}>まだ成果物はありません。実行完了後にここへ生成されます。</p>
               ) : (
-                work.artifacts.map((a) => (
+                (work.artifacts ?? []).map((a) => (
                   <div className="artifact" key={a.id}>
                     <span className={`artifact__ic artifact__ic--${a.artifact_type === "html" ? "html" : "md"}`}><Icon name="file" /></span>
                     <div style={{ flex: 1 }}>
@@ -221,7 +221,7 @@ export function WorkDetail({ workId }: { workId: string }) {
           <div className="card">
             <div className="card__head"><h2>実行情報</h2></div>
             <div className="card__body">
-              <div className="kv"><span className="k">実行ID</span><span className="v mono">{work.run?.id.slice(0, 12) ?? "—"}…</span></div>
+              <div className="kv"><span className="k">実行ID</span><span className="v mono">{work.run?.id ? work.run.id.slice(0, 12) : "—"}…</span></div>
               <div className="kv"><span className="k">Sandbox</span><span className="v">一時コンテナ（/workspace のみ）</span></div>
               <div className="kv"><span className="k">モデル</span><span className="v">{work.run?.model ?? "—"}</span></div>
               <div className="kv"><span className="k">利用トークン</span><span className="v num">{work.run?.token_usage?.total_tokens?.toLocaleString() ?? "—"}</span></div>

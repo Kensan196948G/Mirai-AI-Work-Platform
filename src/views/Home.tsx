@@ -98,7 +98,7 @@ export function Home() {
                   <li className="row" key={w.id} onClick={() => goto("work-detail", w.id)}>
                     <span className="row__ic"><Icon name="work" /></span>
                     <span className="row__main">
-                      <span className="row__title">{w.goal.slice(0, 40)}</span>
+                      <span className="row__title">{(w.goal ?? "").slice(0, 40)}</span>
                       <span className="row__meta">{w.project_name ?? "個人"} · 更新 {fmtRel(w.updated_at)}</span>
                     </span>
                     <span className="row__side"><Pill status={w.status} /></span>

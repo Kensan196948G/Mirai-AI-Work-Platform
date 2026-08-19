@@ -1,4 +1,5 @@
 // アプリルート: 認証状態 → Login / Shell+ビュー
+import { useEffect } from "react";
 import { AppProvider, useApp } from "./lib/app-context";
 import { Toast } from "./components/ui";
 import { Shell } from "./components/Shell";
@@ -46,6 +47,10 @@ function Router() {
 
 function Root() {
   const { toast } = useApp();
+  useEffect(() => {
+    if (DEMO_BANNER) document.body.classList.add("demo");
+    return () => document.body.classList.remove("demo");
+  }, []);
   return (
     <>
       {DEMO_BANNER && (

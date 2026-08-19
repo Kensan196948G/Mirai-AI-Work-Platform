@@ -69,7 +69,7 @@ export function Agents() {
                 {filtered.map((r) => (
                   <tr key={r.id} onClick={() => r.work_id ? goto("work-detail", r.work_id) : undefined}>
                     <td>
-                      <div className="cell-title">{r.goal.slice(0, 44)}</div>
+                      <div className="cell-title">{(r.goal ?? "").slice(0, 44)}</div>
                       <div className="cell-sub">{r.id.slice(0, 12)}…</div>
                     </td>
                     <td>{r.project_name ?? "個人"}</td>

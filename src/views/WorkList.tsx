@@ -84,7 +84,7 @@ export function WorkList() {
               <tbody>
                 {filtered.map((w) => (
                   <tr key={w.id} onClick={() => goto("work-detail", w.id)}>
-                    <td><div className="cell-title">{w.goal.slice(0, 48)}</div></td>
+                    <td><div className="cell-title">{(w.goal ?? "").slice(0, 48)}</div></td>
                     <td>{w.project_name ?? "個人"}</td>
                     <td><Pill status={w.status} /></td>
                     <td className="num">{fmtDateTime(w.started_at)}</td>

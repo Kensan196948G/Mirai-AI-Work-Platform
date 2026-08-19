@@ -4,9 +4,9 @@ compatibility_date = "2026-07-13"
 compatibility_flags = ["nodejs_compat"]
 
 # Same-origin production: this Worker serves both the SPA static assets and
-# the /api/* routes on https://mirai-ai.mirai-dx-platform.com.
+# the /api/* routes on https://ai-work.mirai-dx-platform.com.
 routes = [
-  { pattern = "mirai-ai.mirai-dx-platform.com", custom_domain = true }
+  { pattern = "ai-work.mirai-dx-platform.com", custom_domain = true }
 ]
 
 [assets]
@@ -20,8 +20,8 @@ AI_MODEL = "deepseek-chat"
 AI_ENABLED = "false"
 MAX_INPUT_CHARS = "8000"
 MAX_FILE_UPLOAD_BYTES = "104857600"
-APP_BASE_URL = "https://mirai-ai.mirai-dx-platform.com"
-ALLOWED_ORIGINS = "https://mirai-ai.mirai-dx-platform.com"
+APP_BASE_URL = "https://ai-work.mirai-dx-platform.com"
+ALLOWED_ORIGINS = "https://ai-work.mirai-dx-platform.com"
 ADMIN_LOGIN_IDS = "naoki.sato"
 ALLOW_LOCAL_AUTH_BYPASS = "false"
 # Storage simulation (physical /mnt/storage 10TB HDD is a deployment-side
@@ -41,7 +41,7 @@ AI_MAX_RETRIES = "2"
 #   wrangler secret put DEEPSEEK_API_KEY   (only when AI_ENABLED=true)
 
 # ---------------------------------------------------------------------------
-# MVP/Preview environment (https://mirai-ai-mvp.mirai-dx-platform.com)
+# MVP/Preview environment (https://ai-work-mvp.mirai-dx-platform.com)
 # Fully separated from production: own Worker name + custom domain + own Neon
 # database (mirai_ai_work_platform, seeded with fictional demo data).
 # ALLOW_LOCAL_AUTH_BYPASS=true so reviewers can open the URL and operate
@@ -51,15 +51,15 @@ AI_MAX_RETRIES = "2"
 [env.mvp]
 name = "mirai-ai-work-platform-api-mvp"
 routes = [
-  { pattern = "mirai-ai-mvp.mirai-dx-platform.com", custom_domain = true }
+  { pattern = "ai-work-mvp.mirai-dx-platform.com", custom_domain = true }
 ]
 
 [env.mvp.triggers]
 crons = []
 
 [env.mvp.vars]
-APP_BASE_URL = "https://mirai-ai-mvp.mirai-dx-platform.com"
-ALLOWED_ORIGINS = "https://mirai-ai-mvp.mirai-dx-platform.com"
+APP_BASE_URL = "https://ai-work-mvp.mirai-dx-platform.com"
+ALLOWED_ORIGINS = "https://ai-work-mvp.mirai-dx-platform.com"
 ALLOW_LOCAL_AUTH_BYPASS = "true"
 # バイパス時の利用者制限 (空 = 既存ユーザー全員を許可。RBACはサーバー側で実施)
 ADMIN_LOGIN_IDS = ""
