@@ -202,51 +202,183 @@ function AdminUsers({ onToast }: { onToast: (m: string) => void }) {
 
 // ---- Project管理 ----
 function AdminProjects() {
+  const { showToast } = useApp();
   const [projects, setProjects] = useState<Project[] | null>(null);
-  useEffect(() => { (async () => setProjects((await api.get<{ projects: Project[] }>("/admin/projects")).projects))(); }, []);
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", description: "", quota_gb: "100", status: "active" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = async () => setProjects((await api.get<{ projects: Project[] }>("/admin/projects")).projects);
+  useEffect(() => { void load(); }, []);
+
+  const openEdit = (p: Project) => {
+    setEditing(p);
+    setEditForm({
+      name: p.name,
+      description: p.description ?? "",
+      quota_gb: String(Math.round(p.storage_quota_bytes / 1073741824)),
+      status: p.status,
+    });
+    setErr(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await api.patch(`/admin/projects/${editing.id}`, {
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        storage_quota_bytes: Number(editForm.quota_gb) * 1073741824,
+        status: editForm.status,
+      });
+      setEditing(null);
+      showToast("Projectを更新しました");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "更新に失敗しました。");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (p: Project) => {
+    if (!window.confirm(`Project「${p.name}」を削除します。
+メンバー関係とProject内ファイルも削除されます。この操作は取り消せません。`)) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await api.delete(`/admin/projects/${p.id}`);
+      showToast("Projectを削除しました");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "削除に失敗しました。");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div className="card">
-      <div className="table-wrap">
-        {projects === null ? <Loading /> : (
-          <table className="tbl">
-            <thead><tr><th>Project</th><th>所有者</th><th>メンバー</th><th>Quota</th><th>使用量</th><th>状態</th></tr></thead>
-            <tbody>
-              {projects.map((p) => (
-                <tr key={p.id}>
-                  <td><div className="cell-title">{p.name}</div><div className="cell-sub">{p.folder_name}</div></td>
-                  <td>{p.owner_name ?? "—"}</td>
-                  <td>{p.member_count ?? 0}名</td>
-                  <td className="num">{(p.storage_quota_bytes / 1073741824).toFixed(0)} GB</td>
-                  <td className="num">{fmtSize(p.usage_bytes ?? 0)}</td>
-                  <td><Pill status={p.status === "active" ? "active" : "ended"} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+    <>
+      {err && <Alert kind="danger" >{err}</Alert>}
+      <div className="card">
+        <div className="table-wrap">
+          {projects === null ? <Loading /> : (
+            <table className="tbl">
+              <thead><tr><th>Project</th><th>所有者</th><th>メンバー</th><th>Quota</th><th>使用量</th><th>状態</th><th></th></tr></thead>
+              <tbody>
+                {projects.map((p) => (
+                  <tr key={p.id}>
+                    <td><div className="cell-title">{p.name}</div><div className="cell-sub">{p.folder_name}</div></td>
+                    <td>{p.owner_name ?? "—"}</td>
+                    <td>{p.member_count ?? 0}名</td>
+                    <td className="num">{(p.storage_quota_bytes / 1073741824).toFixed(0)} GB</td>
+                    <td className="num">{fmtSize(p.usage_bytes ?? 0)}</td>
+                    <td><Pill status={p.status === "active" ? "active" : "ended"} /></td>
+                    <td>
+                      <span className="row-actions">
+                        <button className="iconbtn" aria-label="編集" onClick={() => openEdit(p)}><Icon name="edit" size={14} /></button>
+                        <button className="iconbtn iconbtn--danger" aria-label="削除" onClick={() => void remove(p)} disabled={busy}><Icon name="trash" size={14} /></button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+
+      {editing && (
+        <Modal title={`Project編集: ${editing.name}`} onClose={() => setEditing(null)}
+          footer={<>
+            <button className="btn btn--secondary" onClick={() => setEditing(null)}>キャンセル</button>
+            <button className="btn btn--primary" onClick={() => void saveEdit()} disabled={busy || !editForm.name.trim()}>
+              {busy ? "保存中…" : "保存"}
+            </button>
+          </>}>
+          {err && <Alert kind="danger">{err}</Alert>}
+          <div className="field">
+            <label htmlFor="ap-name">Project名</label>
+            <input id="ap-name" className="input" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="ap-desc">説明</label>
+            <textarea id="ap-desc" className="input" rows={2} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="ap-quota">Quota（GB）</label>
+            <select id="ap-quota" className="input" value={editForm.quota_gb} onChange={(e) => setEditForm({ ...editForm, quota_gb: e.target.value })}>
+              <option value="50">50 GB</option><option value="100">100 GB</option><option value="500">500 GB</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="ap-status">状態</label>
+            <select id="ap-status" className="input" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+              <option value="active">進行中</option><option value="ended">終了</option><option value="archived">アーカイブ</option>
+            </select>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
 
-// ---- AI設定 ----
+// ---- AI設定 (APIキー入力・テスト・保存・クリア) ----
 function AdminAi() {
-  const [rt, setRt] = useState<{ provider: string; model: string; enabled: boolean; has_api_key: boolean; max_input_chars: number; timeout_ms: number; max_retries: number } | null>(null);
+  const [rt, setRt] = useState<{ provider: string; model: string; enabled: boolean; has_api_key: boolean; has_enc_key: boolean; max_input_chars: number; timeout_ms: number; max_retries: number } | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [msg, setMsg] = useState<{ kind: "info" | "danger"; text: string } | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      const d = await api.get<{ runtime: typeof rt }>("/admin/ai");
-      setRt(d.runtime);
-    })();
-  }, []);
+  const load = async () => {
+    const d = await api.get<{ runtime: typeof rt }>("/admin/ai");
+    setRt(d.runtime);
+  };
+  useEffect(() => { void load(); }, []);
 
   const test = async () => {
     setTesting(true);
+    setMsg(null);
     try {
       setTestResult(await api.post<{ ok: boolean; message: string }>("/admin/ai/test"));
+    } catch (e) {
+      setTestResult({ ok: false, message: e instanceof Error ? e.message : "接続テストに失敗しました。" });
     } finally { setTesting(false); }
+  };
+
+  const saveKey = async () => {
+    const key = apiKey.trim();
+    if (!key) { setMsg({ kind: "danger", text: "APIキーを入力してください。" }); return; }
+    setSaving(true);
+    setMsg(null);
+    try {
+      await api.post("/admin/ai/key", { api_key: key });
+      setApiKey("");
+      setMsg({ kind: "info", text: "APIキーを暗号化して保存しました。" });
+      await load();
+    } catch (e) {
+      setMsg({ kind: "danger", text: e instanceof Error ? e.message : "保存に失敗しました。" });
+    } finally { setSaving(false); }
+  };
+
+  const clearKey = async () => {
+    if (!window.confirm("保存されたAPIキーをクリアします。よろしいですか？")) return;
+    setSaving(true);
+    setMsg(null);
+    try {
+      await api.post("/admin/ai/key/clear");
+      setApiKey("");
+      setMsg({ kind: "info", text: "APIキーをクリアしました。" });
+      await load();
+    } catch (e) {
+      setMsg({ kind: "danger", text: e instanceof Error ? e.message : "クリアに失敗しました。" });
+    } finally { setSaving(false); }
   };
 
   if (!rt) return <Loading />;
@@ -258,10 +390,26 @@ function AdminAi() {
           <div className="kv"><span className="k">Provider</span><span className="v">{rt.provider === "deepseek" ? "DeepSeek API" : "demo（検証用ローカル応答）"}</span></div>
           <div className="kv"><span className="k">モデル</span><span className="v">{rt.model}</span></div>
           <div className="kv"><span className="k">有効</span><span className="v"><Pill status={rt.enabled ? "active" : "failed"} label={rt.enabled ? "有効" : "無効"} /></span></div>
-          <div className="kv"><span className="k">APIキー</span><span className="v">{rt.has_api_key ? "設定済み（Secret管理）" : "未設定（Secret管理基盤）"}</span></div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <button className="btn btn--primary" onClick={() => void test()} disabled={testing}>
-              {testing ? "テスト中…" : "テスト接続"}
+          <div className="kv"><span className="k">APIキー</span><span className="v">{rt.has_api_key ? "設定済み（暗号化保存）" : "未設定"}</span></div>
+          <div className="field" style={{ marginTop: 14 }}>
+            <label htmlFor="ai-apikey">APIキー</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input className="input" type={showKey ? "text" : "password"} id="ai-apikey"
+                placeholder={rt.has_api_key ? "新しいキーを入力（上書き保存）" : "sk-..."}
+                autoComplete="off" spellCheck={false} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+              <button className="iconbtn" type="button" aria-label="APIキーを表示/非表示" onClick={() => setShowKey(!showKey)}><Icon name="eye" /></button>
+            </div>
+            <div className="hint">保存状態: {rt.has_api_key ? "設定済み（AES-GCM暗号化）" : "未設定"}{rt.has_enc_key ? "" : " · AI_KEY_ENC_KEY 未設定"}</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "2px 0 14px" }}>
+            <button className="btn btn--primary" id="ai-key-test" onClick={() => void test()} disabled={testing}>
+              {testing ? "テスト中…" : "接続テスト"}
+            </button>
+            <button className="btn btn--secondary" id="ai-key-save" onClick={() => void saveKey()} disabled={saving}>
+              <Icon name="check" size={13} />保存
+            </button>
+            <button className="btn btn--secondary" id="ai-key-clear" onClick={() => void clearKey()} disabled={saving}>
+              <Icon name="x" size={13} />クリア
             </button>
           </div>
           {testResult && (
@@ -270,7 +418,13 @@ function AdminAi() {
               <span>{testResult.message}</span>
             </div>
           )}
-          <div className="kv" style={{ marginTop: 12 }}><span className="k">Key の保存先</span><span className="v">Secret 管理基盤（DB・ソースへ平文保存しない）</span></div>
+          {msg && (
+            <div className={`alert ${msg.kind === "info" ? "alert--info" : "alert--danger"}`} style={{ marginTop: 12 }}>
+              <Icon name={msg.kind === "info" ? "check" : "alert"} />
+              <span>{msg.text}</span>
+            </div>
+          )}
+          <div className="kv" style={{ marginTop: 12 }}><span className="k">Key の保存先</span><span className="v">AES-GCM暗号化 (AI_KEY_ENC_KEY) でDB保存。ソース・ログへ平文保存しない</span></div>
         </div>
       </div>
       <div className="card">

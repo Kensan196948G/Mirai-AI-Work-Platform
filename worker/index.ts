@@ -18,7 +18,7 @@ import {
 import {
   buildStorageStatus, checkWriteAllowed, checkQuota, checkGlobalProtection,
 } from "./src/storage";
-import { createProvider, testAiConnection, checkInputLength } from "./src/ai";
+import { createProvider, testAiConnection, checkInputLength, encryptApiKey, decryptApiKey, hasEncryptionKey } from "./src/ai";
 import {
   normalizeRelativePath, isSafeFileName, type User, type Work,
   type AgentRun, type TaskItem, type Artifact, type FileItem,
@@ -324,7 +324,8 @@ app.post("/api/v1/conversations/:id/messages", zValidator("json", messageSchema)
     return jsonError(c, 413, "INPUT_TOO_LONG", `入力は ${lenCheck.maxChars} 文字以内にしてください。`, false);
   }
 
-  const provider = createProvider(c.env);
+  const storedKey = await resolveApiKey(c);
+  const provider = createProvider(c.env, storedKey ?? undefined);
   const history = await db(c)`
     SELECT role, content FROM messages WHERE conversation_id = ${conv[0].id} ORDER BY created_at DESC LIMIT 10`;
   const historyMsgs = history.reverse().map((m) => ({ role: m.role as "user" | "assistant" | "system", content: String(m.content) }));
@@ -958,6 +959,44 @@ app.get("/api/v1/admin/projects", async (c) => {
   return c.json({ projects: rows });
 });
 
+/** Admin: Project編集 (名称・説明・Quota・状態) */
+const adminProjectSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(2000).optional(),
+  storage_quota_bytes: z.number().int().positive().optional(),
+  status: z.enum(["active", "ended", "archived"]).optional(),
+});
+
+app.patch("/api/v1/admin/projects/:id", zValidator("json", adminProjectSchema), async (c) => {
+  const body = c.req.valid("json");
+  const rows = await db(c)`
+    UPDATE projects SET
+      name = COALESCE(${body.name ?? null}, name),
+      description = COALESCE(${body.description ?? null}, description),
+      storage_quota_bytes = COALESCE(${body.storage_quota_bytes ?? null}, storage_quota_bytes),
+      status = COALESCE(${body.status ?? null}, status),
+      updated_at = now()
+    WHERE id = ${c.req.param("id")}
+    RETURNING *`;
+  if (!rows[0]) return jsonError(c, 404, "NOT_FOUND", "Projectが見つかりません。", false);
+  await audit(c, "PROJECT_UPDATE", { resourceType: "project", resourceId: c.req.param("id") });
+  return c.json({ project: rows[0] });
+});
+
+/** Admin: Project削除 (管理者限定・確認済み操作。関連メンバーも削除) */
+app.delete("/api/v1/admin/projects/:id", async (c) => {
+  const prows = await db(c)`SELECT * FROM projects WHERE id = ${c.req.param("id")} LIMIT 1`;
+  if (!prows[0]) return jsonError(c, 404, "NOT_FOUND", "Projectが見つかりません。", false);
+  // 関連データ: メンバー (CASCADE) / ファイルは論理削除済み前提で物理削除はしない。
+  // Works/AgentRuns/Conversations は project_id を NULL 化 (ON DELETE SET NULL)。
+  await db(c)`DELETE FROM project_members WHERE project_id = ${prows[0].id}`;
+  await db(c)`UPDATE files SET deleted_at = now(), status = 'deleting', updated_at = now()
+              WHERE owner_type = 'project' AND owner_id = ${prows[0].id} AND deleted_at IS NULL`;
+  await db(c)`DELETE FROM projects WHERE id = ${prows[0].id}`;
+  await audit(c, "PROJECT_DELETE", { resourceType: "project", resourceId: prows[0].id });
+  return c.json({ ok: true });
+});
+
 app.get("/api/v1/admin/audit-logs", async (c) => {
   const action = c.req.query("action") ?? "all";
   const result = c.req.query("result") ?? "all";
@@ -979,17 +1018,34 @@ app.get("/api/v1/admin/audit-logs", async (c) => {
   return c.json({ logs: rows });
 });
 
-// AI設定 (Admin): 状態参照・テスト接続・保存 (APIキー実値は Secret)
+// AI設定 (Admin): 状態参照・テスト接続・APIキー保存/クリア (APIキー実値は平文保存しない)
+// APIキーは AES-GCM (AI_KEY_ENC_KEY) で暗号化して DB に保持するか、
+// env の DEEPSEEK_API_KEY (Secret) を使用する。
+async function resolveApiKey(c: AppContext): Promise<string | null> {
+  // DB に保存された暗号化キーを優先
+  try {
+    const rows = await db(c)`SELECT api_key_encrypted FROM ai_settings WHERE id = 1 LIMIT 1`;
+    if (rows[0]?.api_key_encrypted) {
+      return await decryptApiKey(c.env, rows[0].api_key_encrypted as string);
+    }
+  } catch {
+    // 復号失敗時は env へフォールバック
+  }
+  return c.env.DEEPSEEK_API_KEY ?? null;
+}
+
 app.get("/api/v1/admin/ai", async (c) => {
   const rows = await db(c)`SELECT * FROM ai_settings WHERE id = 1 LIMIT 1`;
-  const provider = createProvider(c.env);
+  const storedKey = await resolveApiKey(c);
+  const provider = createProvider(c.env, storedKey ?? undefined);
   return c.json({
     settings: rows[0] ?? null,
     runtime: {
       provider: provider.name,
       model: provider.model,
       enabled: provider.enabled,
-      has_api_key: provider.name === "deepseek" ? (c.env.DEEPSEEK_API_KEY ?? "") !== "" : true,
+      has_api_key: storedKey !== null && storedKey !== "",
+      has_enc_key: hasEncryptionKey(c.env),
       max_input_chars: Number(c.env.MAX_INPUT_CHARS ?? 8000),
       timeout_ms: Number(c.env.AI_TIMEOUT_MS ?? 120000),
       max_retries: Number(c.env.AI_MAX_RETRIES ?? 2),
@@ -998,7 +1054,8 @@ app.get("/api/v1/admin/ai", async (c) => {
 });
 
 app.post("/api/v1/admin/ai/test", async (c) => {
-  const result = await testAiConnection(c.env);
+  const storedKey = await resolveApiKey(c);
+  const result = await testAiConnection(c.env, storedKey ?? undefined);
   await audit(c, "AI_TEST", { resourceType: "ai_settings", resourceId: result.provider, result: result.ok ? "success" : "failure" });
   return c.json(result);
 });
@@ -1007,6 +1064,35 @@ const aiSettingsSchema = z.object({
   provider: z.enum(["deepseek", "demo"]).optional(),
   model: z.string().min(1).max(120).optional(),
   enabled: z.boolean().optional(),
+});
+
+/** APIキー保存 (AES-GCM暗号化してDBへ) */
+app.post("/api/v1/admin/ai/key", zValidator("json", z.object({ api_key: z.string().min(1).max(300) })), async (c) => {
+  const { api_key } = c.req.valid("json");
+  if (api_key.includes(" ") && !/^sk-[A-Za-z0-9]+$/.test(api_key)) {
+    return jsonError(c, 400, "BAD_KEY", "APIキーの形式が不正です。", false);
+  }
+  if (!hasEncryptionKey(c.env)) {
+    return jsonError(c, 503, "ENC_KEY_MISSING", "AI_KEY_ENC_KEY (Secret) が未設定のためAPIキーを保存できません。管理者に設定を依頼してください。", false);
+  }
+  const encrypted = await encryptApiKey(c.env, api_key.trim());
+  await db(c)`
+    INSERT INTO ai_settings (id, api_key_encrypted, updated_by)
+    VALUES (1, ${encrypted}, ${(c.get("user") as AuthUser).id})
+    ON CONFLICT (id) DO UPDATE SET
+      api_key_encrypted = EXCLUDED.api_key_encrypted,
+      updated_by = EXCLUDED.updated_by, updated_at = now()`;
+  await audit(c, "AI_KEY_SAVE", { resourceType: "ai_settings", resourceId: "1" });
+  return c.json({ ok: true, message: "APIキーを暗号化して保存しました。" });
+});
+
+/** APIキークリア */
+app.post("/api/v1/admin/ai/key/clear", async (c) => {
+  await db(c)`
+    UPDATE ai_settings SET api_key_encrypted = NULL, updated_by = ${(c.get("user") as AuthUser).id}, updated_at = now()
+    WHERE id = 1`;
+  await audit(c, "AI_KEY_CLEAR", { resourceType: "ai_settings", resourceId: "1" });
+  return c.json({ ok: true, message: "APIキーをクリアしました。" });
 });
 
 app.post("/api/v1/admin/ai/save", zValidator("json", aiSettingsSchema), async (c) => {

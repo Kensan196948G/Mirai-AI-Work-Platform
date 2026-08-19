@@ -23,7 +23,7 @@ DeepSeek API を中核とし、社内業務における **AIチャット、タ�
 | ダミーデータ | 10ユーザー / 4Project / 5Work / 8ファイル / 4会話 / 10監査ログ（パスワード: `mirai-demo`） |
 | AI | MVP環境は `demo` プロバイダー（決定的ローカル応答・課金なし）。本番は `DEEPSEEK_API_KEY` 設定で有効化 |
 | 認証 | ローカル認証（PBKDF2-SHA256 パスワードハッシュ + HttpOnly Cookie セッション）。MVP環境は `X-Demo-User` バイパス（RBACはサーバー側で実施） |
-| 検証 | ✅ vitest 47件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **20/20 PASS**（デプロイ後E2E）<br/>✅ ブラウザE2E **16/16 PASS**（ログイン・Chat・Work・Files・Admin・レスポンシブ・キーボード）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS** |
+| 検証 | ✅ vitest 57件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **20/20 PASS**（デプロイ後E2E）<br/>✅ ブラウザE2E **20/20 PASS**（ログイン・Chat・Work・Files・Admin Project編集/削除・AI設定APIキー保存/テスト/クリア・レスポンシブ・キーボード）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS** |
 
 **検証用ログイン**: 利用者ID `naoki.sato` / パスワード `mirai-demo`（IT・DX管理者）。`k.tanaka`（一般利用者）等も同パスワードでサインインでき、権限差を確認できます。
 
@@ -40,7 +40,7 @@ DeepSeek API を中核とし、社内業務における **AIチャット、タ�
 | Projects | 作成・メンバー管理・Quota・Files・Artifacts | 所有者/管理者 |
 | Files | アップロード・ダウンロード・削除（個人/Project領域） | 全員 |
 | Agents | 実行状態・履歴・資源利用 | 全員 |
-| Admin | ダッシュボード / 利用者 / Project / AI設定 / 監査ログ | 管理者のみ |
+| Admin | ダッシュボード / 利用者 / Project（編集・削除可）/ AI設定（APIキー保存・接続テスト・クリア）/ 監査ログ | 管理者のみ |
 
 ## 🏛️ アーキテクチャ
 
