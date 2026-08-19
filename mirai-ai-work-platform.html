@@ -1,0 +1,2302 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirai AI Work Platform — ホーム</title>
+<style>
+:root{
+  --bg:      oklch(98% 0.005 250);
+  --surface: oklch(100% 0 0);
+  --fg:      oklch(22% 0.02 240);
+  --muted:   oklch(50% 0.018 240);
+  --border:  oklch(90% 0.008 240);
+  --accent:  oklch(58% 0.16 145);
+  --accent-text:  oklch(42% 0.13 145);
+  --accent-strong:oklch(42% 0.13 145);
+  --accent-soft: oklch(58% 0.16 145 / 0.12);
+  --accent-line: oklch(58% 0.16 145 / 0.35);
+
+  --success:   oklch(40% 0.11 150);
+  --success-bg:oklch(58% 0.16 145 / 0.13);
+  --warning:   oklch(46% 0.11 80);
+  --warning-bg:oklch(78% 0.15 85 / 0.18);
+  --danger:    oklch(45% 0.19 25);
+  --danger-bg: oklch(55% 0.22 25 / 0.12);
+  --info:      oklch(44% 0.11 250);
+  --info-bg:   oklch(58% 0.12 250 / 0.12);
+
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', system-ui, sans-serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic UI', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --sidebar-w: 232px;
+  --header-h: 50px;
+  --footer-h: 32px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--font-body);
+  font-size:14px;
+  line-height:1.6;
+  color:var(--fg);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent-text);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit}
+h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.4;letter-spacing:0}
+.mono{font-family:var(--font-mono);font-size:.92em}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+/* ---------- focus ---------- */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  height:34px;padding:0 14px;
+  font-size:13px;font-weight:550;letter-spacing:.02em;
+  border:1px solid transparent;border-radius:var(--radius);
+  cursor:pointer;white-space:nowrap;
+  transition:background-color .12s ease,border-color .12s ease;
+}
+.btn svg{width:15px;height:15px}
+.btn--primary{background:var(--accent-strong);color:#fff}
+.btn--primary:hover{background:oklch(37% 0.13 145);border-color:oklch(37% 0.13 145)}
+.btn--secondary{background:var(--surface);color:var(--fg);border-color:var(--border)}
+.btn--secondary:hover{background:oklch(96% 0.004 250);border-color:oklch(85% 0.01 240)}
+.btn--ghost{background:transparent;color:var(--accent-text)}
+.btn--ghost:hover{background:var(--accent-soft);text-decoration:none}
+.btn--danger{background:var(--surface);color:var(--danger);border-color:oklch(80% 0.03 25)}
+.btn--danger:hover{background:var(--danger-bg);border-color:oklch(70% 0.06 25)}
+.btn--sm{height:28px;padding:0 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* ---------- pills ---------- */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  height:22px;padding:0 9px;
+  font-size:12px;font-weight:550;letter-spacing:.01em;
+  border-radius:99px;white-space:nowrap;
+}
+.pill .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.pill--success{background:var(--success-bg);color:var(--success)}
+.pill--success .dot{background:var(--success)}
+.pill--warn{background:var(--warning-bg);color:var(--warning)}
+.pill--warn .dot{background:var(--warning)}
+.pill--danger{background:var(--danger-bg);color:var(--danger)}
+.pill--danger .dot{background:var(--danger)}
+.pill--info{background:var(--info-bg);color:var(--info)}
+.pill--info .dot{background:var(--info)}
+.pill--muted{background:oklch(92% 0.006 240);color:var(--muted)}
+.pill--muted .dot{background:var(--muted)}
+.pill--running{background:var(--accent-soft);color:var(--accent-text)}
+.pill--running .dot{background:var(--accent);animation:pulse 1.1s ease infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* ---------- cards / panels ---------- */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+}
+.card__head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 14px;border-bottom:1px solid var(--border);
+}
+.card__head h2{font-size:13px;font-weight:600;letter-spacing:.01em}
+.card__body{padding:14px}
+.card__body--flush{padding:0}
+
+.kicker{
+  font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);
+}
+
+/* ---------- app shell ---------- */
+.shell{
+  display:grid;
+  grid-template-columns:var(--sidebar-w) 1fr;
+  grid-template-rows:var(--header-h) 1fr var(--footer-h);
+  grid-template-areas:"side head" "side main" "side foot";
+  height:100vh;
+}
+.sidebar{grid-area:side;background:oklch(97% 0.005 250);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.header{grid-area:head;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:16px}
+.main{grid-area:main;overflow-y:auto;padding:20px 24px 32px}
+.footer{grid-area:foot;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:0 16px;font-size:12px}
+
+/* sidebar */
+.brand{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--border)}
+.brand__mark{width:26px;height:26px;border-radius:6px;background:var(--accent-strong);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.brand__mark svg{width:15px;height:15px}
+.brand__name{font-weight:650;font-size:13.5px;letter-spacing:.01em;line-height:1.2}
+.brand__sub{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+.nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.nav__group{padding:14px 10px 4px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.nav a{
+  display:flex;align-items:center;gap:10px;
+  height:34px;padding:0 10px;border-radius:var(--radius-sm);
+  color:var(--fg);font-size:13.5px;font-weight:520;text-decoration:none;
+}
+.nav a svg{width:16px;height:16px;color:var(--muted);flex:none}
+.nav a:hover{background:oklch(93% 0.006 240);text-decoration:none}
+.nav a.active{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
+.nav a.active svg{color:var(--accent-text)}
+.nav a .nav__tag{margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:0 5px;height:16px;line-height:15px}
+.sidebar__foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--border)}
+.userchip{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--radius)}
+.avatar{width:28px;height:28px;border-radius:50%;background:oklch(58% 0.16 145 / 0.16);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:650;flex:none}
+.userchip__name{font-size:13px;font-weight:550;line-height:1.2}
+.userchip__role{font-size:11px;color:var(--muted)}
+
+/* header */
+.hdr-context{display:flex;align-items:center;gap:8px;min-width:0}
+.hdr-context .crumb{font-size:12.5px;color:var(--muted)}
+.hdr-context select{
+  font-family:inherit;font-size:13px;font-weight:550;color:var(--fg);
+  border:1px solid var(--border);border-radius:var(--radius);height:32px;padding:0 30px 0 10px;
+  background:var(--surface);cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+}
+.hdr-actions{display:flex;align-items:center;gap:8px}
+.iconbtn{
+  position:relative;width:34px;height:34px;border-radius:var(--radius);
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.iconbtn:hover{background:oklch(96% 0.004 250);color:var(--fg)}
+.iconbtn svg{width:17px;height:17px}
+.iconbtn .badge{
+  position:absolute;top:3px;right:3px;min-width:15px;height:15px;padding:0 4px;
+  background:var(--danger);color:#fff;border-radius:99px;font-size:10px;font-weight:650;
+  display:flex;align-items:center;justify-content:center;
+}
+.hdr-storage{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);padding:0 6px}
+.hdr-storage .bar{width:64px;height:5px;border-radius:99px;background:oklch(92% 0.006 240);overflow:hidden}
+.hdr-storage .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+
+/* footer */
+.footer .f-item{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.footer .f-item svg{width:13px;height:13px}
+.footer .sep{color:var(--border)}
+.footer .f-grow{flex:1}
+.footer .f-storage{display:flex;align-items:center;gap:8px}
+.footer .f-storage .bar{width:120px;height:6px;border-radius:99px;background:oklch(92% 0.006 240);overflow:hidden;position:relative}
+.footer .f-storage .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.footer .f-storage .bar .tick{position:absolute;top:0;bottom:0;width:1px;background:oklch(96% 0 0)}
+.conn{display:inline-flex;align-items:center;gap:6px}
+.conn .dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
+
+/* ---------- dropdown ---------- */
+.dropdown{position:relative}
+.dropdown__menu{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:40;min-width:200px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:0 8px 24px oklch(20% 0.02 240 / 0.10);padding:5px;display:none;
+}
+.dropdown.open .dropdown__menu{display:block}
+.dropdown__menu button,.dropdown__menu a{
+  display:flex;align-items:center;gap:9px;width:100%;height:32px;padding:0 9px;
+  border:none;background:transparent;font-size:13px;color:var(--fg);border-radius:var(--radius-sm);
+  cursor:pointer;text-align:left;text-decoration:none;
+}
+.dropdown__menu button:hover,.dropdown__menu a:hover{background:oklch(96% 0.004 250);text-decoration:none}
+.dropdown__menu svg{width:15px;height:15px;color:var(--muted)}
+.dropdown__menu .dd-sep{height:1px;background:var(--border);margin:5px 4px}
+.dropdown__label{padding:5px 9px;font-size:11px;color:var(--muted)}
+
+/* ---------- views ---------- */
+.view{display:none}
+.view.active{display:block}
+
+/* ---------- login ---------- */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:
+  radial-gradient(1200px 600px at 15% -10%, oklch(58% 0.16 145 / 0.06), transparent 60%),
+  var(--bg);}
+.login__panel{width:400px;max-width:100%}
+.login__brand{display:flex;align-items:center;gap:11px;margin-bottom:26px}
+.login__brand .brand__mark{width:34px;height:34px}
+.login__brand .brand__mark svg{width:19px;height:19px}
+.login__brand .brand__name{font-size:17px}
+.login__brand .brand__sub{font-size:12px}
+.login__card{padding:24px}
+.login h1{font-size:18px;font-weight:650;margin-bottom:4px}
+.login .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:550;margin-bottom:5px;letter-spacing:.01em}
+.field input{
+  width:100%;height:36px;padding:0 11px;font-size:14px;font-family:inherit;
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);
+}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+.login__row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.login .btn--primary{width:100%;height:38px;justify-content:center;font-size:14px}
+.login__foot{margin-top:18px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.6}
+.login__foot a{font-weight:550}
+.alert{
+  display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border-radius:var(--radius);
+  font-size:12.5px;line-height:1.55;margin-bottom:16px;
+}
+.alert svg{width:15px;height:15px;flex:none;margin-top:1px}
+.alert--danger{background:var(--danger-bg);color:oklch(38% 0.16 25)}
+.alert--warn{background:var(--warning-bg);color:oklch(40% 0.09 75)}
+.alert--info{background:var(--info-bg);color:oklch(38% 0.09 245)}
+
+/* ---------- page head ---------- */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.page-head h1{font-size:20px;font-weight:650;letter-spacing:-0.01em}
+.page-head .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.page-head__actions{display:flex;align-items:center;gap:8px}
+
+/* ---------- home ---------- */
+.home-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.home-hero h1{font-size:21px;font-weight:650;letter-spacing:-0.01em}
+.home-hero .sub{font-size:13px;color:var(--muted);margin-top:3px}
+.home-hero__actions{display:flex;gap:8px}
+.attention{
+  display:flex;align-items:center;gap:11px;margin-bottom:16px;
+  background:var(--warning-bg);border:1px solid oklch(78% 0.15 85 / 0.4);
+  border-radius:var(--radius);padding:10px 14px;font-size:13px;
+}
+.attention svg{width:16px;height:16px;color:var(--warning);flex:none}
+.attention b{font-weight:650}
+.attention a{font-weight:550}
+.attention .att-items{display:flex;gap:16px;flex-wrap:wrap}
+.home-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* ---------- list rows ---------- */
+.rows{list-style:none;margin:0;padding:0}
+.row{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;
+  border-bottom:1px solid var(--border);cursor:pointer;text-decoration:none;color:inherit;
+}
+.row:last-child{border-bottom:none}
+.row:hover{background:oklch(97% 0.004 250);text-decoration:none}
+.row__ic{width:30px;height:30px;border-radius:var(--radius-sm);background:oklch(96% 0.004 250);display:flex;align-items:center;justify-content:center;flex:none;color:var(--muted)}
+.row__ic svg{width:15px;height:15px}
+.row__main{flex:1;min-width:0}
+.row__title{font-size:13.5px;font-weight:550;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row__meta{font-size:12px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row__side{flex:none;text-align:right}
+.row__time{font-size:11.5px;color:var(--muted)}
+.row__project{font-size:11px;color:var(--muted);background:oklch(96% 0.004 250);border:1px solid var(--border);border-radius:3px;padding:0 5px;height:17px;line-height:16px;display:inline-flex;align-items:center}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{
+  text-align:left;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);padding:9px 14px;border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;line-height:1.45}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover{background:oklch(97% 0.004 250)}
+.tbl .cell-title{font-weight:550;font-size:13px}
+.tbl .cell-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.tbl .mono{font-size:11.5px;color:var(--muted)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.search{
+  position:relative;flex:1;max-width:340px;
+}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted)}
+.search input{
+  width:100%;height:34px;padding:0 10px 0 33px;font-size:13px;font-family:inherit;
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg);
+}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.filter-chips{display:flex;gap:6px}
+.chip{
+  height:30px;padding:0 12px;font-size:12.5px;font-weight:520;border-radius:99px;
+  border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;
+}
+.chip:hover{border-color:var(--accent-line);color:var(--fg)}
+.chip.active{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-text);font-weight:600}
+.toolbar .spacer{flex:1}
+
+/* ---------- chat detail ---------- */
+.chat-layout{display:grid;grid-template-columns:1fr 300px;gap:0;height:calc(100vh - var(--header-h) - var(--footer-h) - 40px)}
+.chat-main{display:flex;flex-direction:column;min-width:0}
+.chat-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);border-radius:var(--radius) var(--radius) 0 0}
+.chat-head h1{font-size:15px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-scroll{flex:1;overflow-y:auto;padding:20px 16px;background:var(--surface)}
+.msg{display:flex;gap:12px;margin-bottom:22px}
+.msg .avatar{flex:none}
+.msg--ai .avatar{background:var(--accent-soft);color:var(--accent-text)}
+.msg__body{max-width:640px;min-width:0}
+.msg__meta{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-bottom:5px}
+.msg__content{font-size:14px;line-height:1.7}
+.msg__content p{margin:0 0 10px}
+.msg__content p:last-child{margin-bottom:0}
+.msg__content ul{margin:6px 0 10px;padding-left:20px}
+.msg__content li{margin-bottom:3px}
+.code{
+  background:oklch(96.5% 0.004 250);border:1px solid var(--border);border-radius:var(--radius);
+  padding:11px 13px;margin:8px 0 12px;overflow-x:auto;font-family:var(--font-mono);font-size:12.5px;line-height:1.6;
+}
+.code .c-cm{color:var(--muted)}
+.msg__tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);
+  background:oklch(97% 0.004 250);border:1px solid var(--border);border-radius:4px;padding:2px 7px;
+}
+.tag svg{width:12px;height:12px}
+.usage-chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11px;color:var(--muted);background:oklch(97% 0.004 250);border:1px solid var(--border);border-radius:4px;padding:2px 7px}
+.chat-composer{border-top:1px solid var(--border);padding:12px 16px;background:var(--surface);border-radius:0 0 var(--radius) var(--radius)}
+.chat-composer .ctx{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:8px}
+.chat-composer .ctx b{color:var(--accent-text);font-weight:600}
+.composer-box{border:1px solid var(--border);border-radius:var(--radius);padding:9px 11px;background:var(--surface)}
+.composer-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.composer-box textarea{
+  width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:14px;line-height:1.6;
+  color:var(--fg);min-height:44px;max-height:160px;background:transparent;
+}
+.composer-tools{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.composer-tools .left{display:flex;align-items:center;gap:6px}
+.composer-tools .hint{font-size:11px;color:var(--muted)}
+.chat-aside{border-left:1px solid var(--border);background:var(--surface);padding:16px;border-radius:0 var(--radius) var(--radius) 0;overflow-y:auto}
+.chat-aside h3{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.chat-aside h3:first-child{margin-top:0}
+.aside-project{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px}
+.aside-project svg{width:15px;height:15px;color:var(--muted)}
+.kv{font-size:12.5px;display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+.kv .k{color:var(--muted)}
+.kv .v{font-weight:550}
+.meter{margin:6px 0 4px}
+.meter__head{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.meter__bar{height:7px;border-radius:99px;background:oklch(92% 0.006 240);overflow:hidden}
+.meter__bar i{display:block;height:100%;border-radius:99px}
+.meter__bar i.acc{background:var(--accent)}
+.meter__bar i.warn{background:oklch(72% 0.14 85)}
+.meter__bar i.danger{background:oklch(55% 0.22 25)}
+
+/* ---------- work detail ---------- */
+.work-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.work-head h1{font-size:18px;font-weight:650;line-height:1.4}
+.work-head .sub{font-size:12.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.work-head__actions{display:flex;gap:8px;flex:none}
+.work-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.timeline{list-style:none;margin:0;padding:0}
+.tl-item{display:flex;gap:12px;padding-bottom:18px;position:relative}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{
+  content:"";position:absolute;left:11px;top:26px;bottom:2px;width:1px;background:var(--border);
+}
+.tl-item:last-child::before{display:none}
+.tl-node{
+  width:23px;height:23px;border-radius:50%;flex:none;position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--border);background:var(--surface);color:transparent;
+}
+.tl-node svg{width:12px;height:12px}
+.tl-item.done .tl-node{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+.tl-item.active .tl-node{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
+.tl-item.err .tl-node{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.tl-item .tl-title{font-size:13.5px;font-weight:550;line-height:1.35}
+.tl-item .tl-sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.tl-item .tl-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.artifact{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px}
+.artifact:last-child{margin-bottom:0}
+.artifact__ic{width:32px;height:32px;border-radius:var(--radius-sm);flex:none;display:flex;align-items:center;justify-content:center}
+.artifact__ic svg{width:16px;height:16px}
+.artifact__ic--html{background:var(--info-bg);color:var(--info)}
+.artifact__ic--md{background:var(--accent-soft);color:var(--accent-text)}
+.artifact__ic--xlsx{background:var(--success-bg);color:var(--success)}
+.artifact__name{font-size:13px;font-weight:550;line-height:1.3}
+.artifact__meta{font-size:11.5px;color:var(--muted);margin-top:1px}
+.review-box{border:1px solid var(--border);border-radius:var(--radius);padding:13px}
+.review-box p{font-size:12.5px;color:var(--muted);margin:0 0 11px;line-height:1.55}
+.review-box .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- placeholder (out of MVP scope) ---------- */
+.placeholder{max-width:560px;margin:40px auto;text-align:center;padding:40px 24px}
+.placeholder svg{width:34px;height:34px;color:var(--muted);margin-bottom:12px}
+.placeholder h2{font-size:16px;font-weight:650;margin-bottom:6px}
+.placeholder p{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 16px}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;bottom:calc(var(--footer-h) + 12px);left:50%;transform:translateX(-50%);
+  background:oklch(24% 0.02 240);color:#fff;font-size:13px;padding:9px 16px;border-radius:var(--radius);
+  box-shadow:0 8px 24px oklch(20% 0.02 240 / 0.25);z-index:60;display:none;align-items:center;gap:8px;max-width:80vw;
+}
+.toast.show{display:flex}
+.toast svg{width:15px;height:15px;color:var(--accent)}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto}
+.tab{height:36px;padding:0 14px;font-size:13px;font-weight:520;letter-spacing:.01em;color:var(--muted);border:none;background:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab.active{color:var(--accent-text);font-weight:600;border-bottom-color:var(--accent)}
+
+/* panels (admin / project detail) */
+.ppanel{display:none}
+.ppanel.active{display:block}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.stat{padding:14px 16px}
+.stat .k{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--muted);margin-bottom:7px}
+.stat .v{font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;line-height:1.1}
+.stat .sub{font-size:11.5px;color:var(--muted);margin-top:5px}
+.stat--accent .v{color:var(--accent-text)}
+.stat--warn .v{color:var(--warning)}
+.stat--danger .v{color:var(--danger)}
+
+/* breadcrumb */
+.crumbs{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.crumbs a{color:var(--muted)}
+.crumbs a:hover{color:var(--accent-text)}
+.crumbs .sep{color:var(--border)}
+.crumbs .cur{color:var(--fg);font-weight:550}
+
+/* generic select */
+.select{font-family:inherit;font-size:13px;font-weight:550;color:var(--fg);border:1px solid var(--border);border-radius:var(--radius);height:32px;padding:0 30px 0 10px;background:var(--surface);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+
+/* grid2 */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+
+/* ---------- inputs / row actions / modal ---------- */
+.input{width:100%;height:34px;padding:0 10px;font-family:inherit;font-size:13.5px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--fg)}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.input{height:auto;padding:9px 11px;line-height:1.6;resize:vertical}
+.row-actions{display:inline-flex;gap:2px;flex:none;align-items:center}
+.row-actions .iconbtn{width:28px;height:28px}
+.row-actions .iconbtn svg{width:14px;height:14px}
+.row-actions .iconbtn--danger:hover{background:var(--danger-bg);color:var(--danger)}
+.tbl td .row-actions{justify-content:flex-end}
+.modal-overlay{position:fixed;inset:0;background:oklch(20% 0.02 240 / 0.42);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px}
+.modal-overlay[hidden]{display:none}
+.modal{width:440px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 20px 60px oklch(20% 0.02 240 / 0.32);max-height:82vh;display:flex;flex-direction:column}
+.modal--sm{width:360px}
+.modal__head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.modal__head h3{font-size:15px;font-weight:650;letter-spacing:-0.01em}
+.modal__body{padding:18px;overflow-y:auto}
+.modal__body p{font-size:13.5px;color:var(--muted);line-height:1.65;margin:0}
+.modal__foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--border)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .shell{grid-template-columns:56px 1fr;--sidebar-w:56px}
+  .brand__name,.brand__sub,.nav__group,.nav a span,.nav__tag,.userchip__name,.userchip__role{display:none}
+  .nav a{justify-content:center;padding:0}
+  .brand{justify-content:center;padding:13px 0}
+  .sidebar__foot{padding:10px}
+  .userchip{justify-content:center;padding:6px 0}
+  .home-grid,.work-grid{grid-template-columns:1fr}
+  .chat-layout{grid-template-columns:1fr}
+  .chat-aside{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SVG sprite ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-work" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 13l2 2 4-4"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+    <symbol id="i-projects" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-files" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="i-agents" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+    <symbol id="i-admin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></symbol>
+    <symbol id="i-chev-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-dot" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============ LOGIN ============ -->
+<div class="login" id="login-view" data-od-id="login-screen">
+  <div class="login__panel">
+    <div class="login__brand">
+      <div class="brand__mark"><svg><use href="#i-logo"/></svg></div>
+      <div>
+        <div class="brand__name">Mirai AI Work Platform</div>
+        <div class="brand__sub">社内向け AI ワークプラットフォーム</div>
+      </div>
+    </div>
+    <div class="card login__card">
+      <h1>サインイン</h1>
+      <p class="sub">利用者IDとパスワードを入力してください。</p>
+      <div class="alert alert--info" style="display:none" id="login-error">
+        <svg><use href="#i-alert"/></svg>
+        <span>利用者IDまたはパスワードが正しくありません。もう一度お試しください。</span>
+      </div>
+      <div class="field">
+        <label for="login-id">利用者ID</label>
+        <input id="login-id" type="text" autocomplete="username" placeholder="例：naoki.sato" value="naoki.sato">
+      </div>
+      <div class="field">
+        <label for="login-pw">パスワード</label>
+        <input id="login-pw" type="password" autocomplete="current-password" placeholder="••••••••" value="mirai-demo">
+      </div>
+      <div class="login__row">
+        <label style="font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center"><input type="checkbox" checked style="accent-color:var(--accent)">サインイン状態を保持</label>
+        <a href="#" style="font-size:12.5px">パスワードをお忘れですか？</a>
+      </div>
+      <button class="btn btn--primary" id="login-btn" data-od-id="login-submit">サインイン</button>
+      <div class="login__foot">
+        <p style="margin:0 0 8px">本システムは社内業務用です。AIへの入力・添付は許可された情報のみとしてください。</p>
+        <a href="#">利用規約</a> · <a href="#">プライバシー</a> · <a href="#">セキュリティ方針</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div class="shell" id="app-shell" style="display:none" data-od-id="app-shell">
+
+  <!-- sidebar -->
+  <aside class="sidebar" data-od-id="sidebar-nav">
+    <div class="brand">
+      <div class="brand__mark"><svg><use href="#i-logo"/></svg></div>
+      <div>
+        <div class="brand__name">Mirai AI</div>
+        <div class="brand__sub">Work Platform</div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="メインナビゲーション">
+      <div class="nav__group">メイン</div>
+      <a href="#" data-nav="home" data-od-id="nav-home"><svg><use href="#i-home"/></svg><span>ホーム</span></a>
+      <a href="#" data-nav="chat-list" data-od-id="nav-chat"><svg><use href="#i-chat"/></svg><span>Chat</span></a>
+      <a href="#" data-nav="work-list" data-od-id="nav-work"><svg><use href="#i-work"/></svg><span>Work</span></a>
+      <div class="nav__group">作業領域</div>
+      <a href="#" data-nav="projects" data-od-id="nav-projects"><svg><use href="#i-projects"/></svg><span>Projects</span></a>
+      <a href="#" data-nav="files" data-od-id="nav-files"><svg><use href="#i-files"/></svg><span>Files</span></a>
+      <a href="#" data-nav="agents" data-od-id="nav-agents"><svg><use href="#i-agents"/></svg><span>Agents</span></a>
+      <div class="nav__group">管理</div>
+      <a href="#" data-nav="admin" data-od-id="nav-admin"><svg><use href="#i-admin"/></svg><span>Admin</span></a>
+    </nav>
+    <div class="sidebar__foot">
+      <div class="userchip">
+        <div class="avatar">佐</div>
+        <div>
+          <div class="userchip__name">佐藤 直樹</div>
+          <div class="userchip__role">IT・DX管理者</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- header -->
+  <header class="header" data-od-id="app-header">
+    <div class="hdr-context">
+      <span class="crumb" id="header-crumb">ホーム</span>
+      <select id="ctx-project" aria-label="現在のプロジェクト" data-od-id="project-context-selector">
+        <option>経費精算レポート自動化</option>
+        <option>社内FAQ構築</option>
+        <option>データ分析基盤 PoC</option>
+        <option>個人ワークスペース</option>
+      </select>
+    </div>
+    <div class="hdr-actions">
+      <div class="hdr-storage">
+        <svg style="width:13px;height:13px" aria-hidden="true"><use href="#i-db"/></svg>
+        <span class="num">34.2 / 100 GB</span>
+        <span class="bar"><i style="width:34%"></i></span>
+      </div>
+      <div class="dropdown" id="dd-notif">
+        <button class="iconbtn" id="btn-notif" aria-label="通知" aria-expanded="false">
+          <svg><use href="#i-bell"/></svg>
+          <span class="badge">2</span>
+        </button>
+        <div class="dropdown__menu" role="menu">
+          <div class="dropdown__label">通知</div>
+          <a href="#" data-goto="work-detail" data-work="w1"><svg><use href="#i-work"/></svg><span><b>Work の確認待ち</b><br>「Q3経費レポートの自動生成」の計画確認が必要です</span></a>
+          <a href="#"><svg><use href="#i-db"/></svg><span>ストレージ使用率 70% 到達（注意）</span></a>
+          <div class="dd-sep"></div>
+          <a href="#" style="justify-content:center;color:var(--muted)">すべて見る</a>
+        </div>
+      </div>
+      <div class="dropdown" id="dd-user">
+        <button class="iconbtn" id="btn-user" aria-label="ユーザーメニュー" aria-expanded="false">
+          <span class="avatar" style="width:26px;height:26px;font-size:11px">佐</span>
+          <svg style="width:13px;height:13px"><use href="#i-chev-d"/></svg>
+        </button>
+        <div class="dropdown__menu" role="menu">
+          <div class="dropdown__label">naoki.sato（佐藤 直樹）</div>
+          <a href="#"><svg><use href="#i-user"/></svg><span>プロフィール</span></a>
+          <a href="#"><svg><use href="#i-db"/></svg><span>容量・利用状況</span></a>
+          <div class="dd-sep"></div>
+          <button id="logout-btn"><svg><use href="#i-logout"/></svg><span>サインアウト</span></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- main -->
+  <main class="main" id="main" data-od-id="main-content">
+
+    <!-- ===== HOME ===== -->
+    <section class="view" data-view="home" data-od-id="screen-home">
+      <div class="home-hero">
+        <div>
+          <h1>おかえりなさい、佐藤さん</h1>
+          <p class="sub">現在のコンテキスト：<b style="color:var(--accent-text)">経費精算レポート自動化</b> · 更新 5分前</p>
+        </div>
+        <div class="home-hero__actions">
+          <button class="btn btn--secondary" data-action="new-chat" data-od-id="cta-new-chat"><svg><use href="#i-chat"/></svg>新しいChat</button>
+          <button class="btn btn--primary" data-action="new-work" data-od-id="cta-new-work"><svg><use href="#i-plus"/></svg>新しいWork</button>
+        </div>
+      </div>
+
+      <div class="attention" data-od-id="attention-banner">
+        <svg><use href="#i-alert"/></svg>
+        <div class="att-items" id="home-attention"></div>
+      </div>
+
+      <div class="home-grid">
+        <div class="stack">
+          <div class="card" data-od-id="recent-conversations">
+            <div class="card__head">
+              <h2>最近の会話</h2>
+              <a href="#" data-goto="chat-list" style="font-size:12.5px;font-weight:550">すべて見る</a>
+            </div>
+            <ul class="rows" id="home-recent"></ul>
+          </div>
+
+          <div class="card" data-od-id="work-status">
+            <div class="card__head">
+              <h2>Work の状況</h2>
+              <a href="#" data-goto="work-list" style="font-size:12.5px;font-weight:550">すべて見る</a>
+            </div>
+            <ul class="rows" id="home-works"></ul>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="card" data-od-id="usage-panel">
+            <div class="card__head"><h2>ストレージ使用量</h2></div>
+            <div class="card__body" id="home-usage"></div>
+          </div>
+
+          <div class="card" data-od-id="notifications">
+            <div class="card__head"><h2>通知</h2></div>
+            <ul class="rows">
+              <li class="row">
+                <span class="row__ic" style="background:var(--warning-bg);color:var(--warning)"><svg><use href="#i-alert"/></svg></span>
+                <span class="row__main"><span class="row__title">ストレージ使用率が 70% に到達しました</span><span class="row__meta">運用担当が拡張計画を検討中です</span></span>
+                <span class="row__side"><span class="row__time">1時間前</span></span>
+              </li>
+              <li class="row">
+                <span class="row__ic" style="background:var(--success-bg);color:var(--success)"><svg><use href="#i-check"/></svg></span>
+                <span class="row__main"><span class="row__title">バックアップが完了しました</span><span class="row__meta">別系統ストレージへの定期バックアップ</span></span>
+                <span class="row__side"><span class="row__time">昨日</span></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card" data-od-id="first-steps">
+            <div class="card__head"><h2>はじめての方へ</h2></div>
+            <div class="card__body">
+              <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 12px">保存先（個人／Project）と利用上限を確認してから AI を使い始めましょう。機密情報や個人情報は入力しないでください。</p>
+              <a href="#" style="font-size:12.5px;font-weight:550">利用者ガイドを読む →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CHAT LIST ===== -->
+    <section class="view" data-view="chat-list" data-od-id="screen-chat-list">
+      <div class="page-head">
+        <div>
+          <h1>Chat</h1>
+          <p class="sub">AIとの対話と会話履歴</p>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--primary" data-action="new-chat"><svg><use href="#i-plus"/></svg>新しいChat</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search">
+          <svg><use href="#i-search"/></svg>
+          <input type="search" placeholder="会話を検索" aria-label="会話を検索">
+        </div>
+        <div class="spacer"></div>
+        <div class="filter-chips">
+          <button class="chip active">すべて</button>
+          <button class="chip">今日</button>
+          <button class="chip">経費精算</button>
+        </div>
+      </div>
+      <div class="card">
+        <ul class="rows" id="chat-list-body"></ul>
+      </div>
+    </section>
+
+    <!-- ===== CHAT DETAIL ===== -->
+    <section class="view" data-view="chat-detail" data-od-id="screen-chat-detail">
+      <div class="chat-layout">
+        <div class="chat-main">
+          <div class="chat-head">
+            <button class="iconbtn" data-goto="chat-list" aria-label="Chat一覧に戻る"><svg><use href="#i-back"/></svg></button>
+            <h1 id="chat-title">会話</h1>
+            <button class="iconbtn" data-action="rename-chat" aria-label="題名を変更"><svg><use href="#i-edit"/></svg></button>
+            <button class="iconbtn" data-action="delete-chat" aria-label="会話を削除" style="color:var(--danger)"><svg><use href="#i-trash"/></svg></button>
+          </div>
+          <div class="chat-scroll" id="chat-scroll" aria-live="polite"></div>
+          <div class="chat-composer">
+            <div class="ctx">送信先コンテキスト：<b id="chat-ctx">経費精算レポート自動化</b>（プロジェクト） · 添付は許可されたファイルのみ</div>
+            <div class="composer-box">
+              <textarea id="chat-input" rows="2" placeholder="質問や依頼を入力してください。送信には Ctrl + Enter を使用できます。"></textarea>
+              <div class="composer-tools">
+                <div class="left">
+                  <button class="iconbtn" aria-label="ファイルを添付" style="width:30px;height:30px"><svg><use href="#i-paperclip"/></svg></button>
+                  <span class="hint">AI回答は人が検証してください</span>
+                </div>
+                <button class="btn btn--primary" id="chat-send" data-od-id="chat-send"><svg><use href="#i-send"/></svg>送信</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="chat-aside" data-od-id="chat-context-panel" id="chat-aside"></aside>
+      </div>
+    </section>
+
+    <!-- ===== WORK LIST ===== -->
+    <section class="view" data-view="work-list" data-od-id="screen-work-list">
+      <div class="page-head">
+        <div>
+          <h1>Work</h1>
+          <p class="sub">Goal → Plan → Task → Artifact → Review</p>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--primary" data-action="new-work"><svg><use href="#i-plus"/></svg>新しいWork</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="filter-chips" id="work-filters">
+          <button class="chip active" data-filter="all">すべて</button>
+          <button class="chip" data-filter="awaiting_review">確認待ち</button>
+          <button class="chip" data-filter="running">実行中</button>
+          <button class="chip" data-filter="succeeded">完了</button>
+          <button class="chip" data-filter="failed">失敗</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="search" style="max-width:220px">
+          <svg><use href="#i-search"/></svg>
+          <input type="search" placeholder="Workを検索" aria-label="Workを検索">
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="tbl" data-od-id="work-table">
+            <thead>
+              <tr><th>目標</th><th>Project</th><th>状態</th><th>進捗</th><th>開始日時</th><th>更新日時</th><th></th></tr>
+            </thead>
+            <tbody id="work-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== WORK DETAIL ===== -->
+    <section class="view" data-view="work-detail" data-od-id="screen-work-detail">
+      <div class="work-head">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <button class="iconbtn" data-goto="work-list" aria-label="Work一覧に戻る" style="margin-left:-4px"><svg><use href="#i-back"/></svg></button>
+            <span class="kicker">Work #WD-2047</span>
+            <span class="pill" id="work-status-pill"><span class="dot"></span>確認待ち</span>
+          </div>
+          <h1 id="work-title">Q3経費レポートの自動生成</h1>
+          <div class="sub" id="work-sub">
+            <span class="row__project">経費精算レポート自動化</span>
+            <span>deepseek-chat</span>
+            <span class="num">開始 08-19 09:20</span>
+          </div>
+        </div>
+        <div class="work-head__actions" id="work-actions">
+          <button class="btn btn--secondary" data-action="edit-work"><svg><use href="#i-edit"/></svg>Goal編集</button>
+          <button class="btn btn--danger" data-action="delete-work"><svg><use href="#i-trash"/></svg>削除</button>
+          <button class="btn btn--primary" id="work-primary-action" data-od-id="work-approve">計画を承認して実行</button>
+        </div>
+      </div>
+
+      <div class="work-grid">
+        <div class="stack">
+          <div class="card" data-od-id="work-goal">
+            <div class="card__head"><h2>Goal と制約</h2></div>
+            <div class="card__body">
+              <p style="margin:0;font-size:13.5px;line-height:1.7" id="work-goal">経費精算レポート自動化プロジェクトの経費データ（expense_2026Q3.csv）から、四半期経費レポートを HTML と PDF の両形式で生成する。部門別・月別の集計と、前四半期比の増減を含める。</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+                <span class="tag"><svg><use href="#i-file"/></svg>成果物: HTML / PDF</span>
+                <span class="tag"><svg><use href="#i-db"/></svg>保存先: Project領域</span>
+                <span class="tag"><svg><use href="#i-alert"/></svg>外部送信: なし</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="work-plan">
+            <div class="card__head">
+              <h2>Plan</h2>
+              <span class="pill pill--info"><span class="dot"></span><span id="plan-state-label">承認待ち</span></span>
+            </div>
+            <div class="card__body">
+              <ol class="timeline" id="work-timeline">
+                <!-- filled by JS -->
+              </ol>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="work-tools">
+            <div class="card__head"><h2>Tool 実行の要約</h2></div>
+            <div class="card__body" id="work-tool-log">
+              <p class="muted" style="font-size:12.5px;margin:0">実行開始後に、Sandbox内で許可されたToolの実行結果がここに表示されます。危険操作は実行前に確認を求めます。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="card" data-od-id="work-artifacts">
+            <div class="card__head"><h2>Artifacts</h2></div>
+            <div class="card__body" id="work-artifacts-body">
+              <p class="muted" style="font-size:12.5px;margin:0">まだ成果物はありません。実行完了後にここへ生成されます。</p>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="work-review">
+            <div class="card__head"><h2>Review</h2></div>
+            <div class="card__body">
+              <div class="review-box" id="work-review-box">
+                <p>実行が完了すると、成果物の内容・形式・保存先を確認し、採用・再実行・終了を選択できます。</p>
+                <div class="btns">
+                  <button class="btn btn--secondary" disabled id="review-adopt"><svg><use href="#i-check"/></svg>採用</button>
+                  <button class="btn btn--secondary" disabled id="review-rerun"><svg><use href="#i-arrow-r"/></svg>再実行</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" data-od-id="work-meta">
+            <div class="card__head"><h2>実行情報</h2></div>
+            <div class="card__body">
+              <div class="kv"><span class="k">実行ID</span><span class="v mono">run_9f3a2c…</span></div>
+              <div class="kv"><span class="k">Sandbox</span><span class="v">一時コンテナ（/workspace のみ）</span></div>
+              <div class="kv"><span class="k">モデル</span><span class="v">deepseek-chat</span></div>
+              <div class="kv"><span class="k">利用トークン</span><span class="v num">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROJECTS ===== -->
+    <section class="view" data-view="projects" data-od-id="screen-projects">
+      <div class="page-head">
+        <div>
+          <h1>Projects</h1>
+          <p class="sub">共同作業のメンバー・ファイル・成果物をまとめる領域</p>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--primary" data-action="new-project"><svg><use href="#i-plus"/></svg>新しいProject</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="filter-chips" id="project-filters">
+          <button class="chip active" data-filter="all">すべて</button>
+          <button class="chip" data-filter="active">進行中</button>
+          <button class="chip" data-filter="owner">所有</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="search" style="max-width:240px">
+          <svg><use href="#i-search"/></svg>
+          <input type="search" placeholder="Projectを検索" aria-label="Projectを検索">
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="tbl" data-od-id="project-table">
+            <thead>
+              <tr><th>Project</th><th>所有者</th><th>メンバー</th><th>使用量</th><th>Quota</th><th>状態</th><th>更新日時</th><th></th></tr>
+            </thead>
+            <tbody id="project-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROJECT DETAIL ===== -->
+    <section class="view" data-view="project-detail" data-od-id="screen-project-detail">
+      <div class="work-head">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <button class="iconbtn" data-goto="projects" aria-label="Projects一覧に戻る" style="margin-left:-4px"><svg><use href="#i-back"/></svg></button>
+            <span class="kicker">Project</span>
+            <span class="pill pill--success" id="proj-status-pill"><span class="dot"></span>進行中</span>
+          </div>
+          <h1 id="proj-title">経費精算レポート自動化</h1>
+          <div class="sub" id="proj-sub"><span>所有者: 佐藤 直樹</span><span>メンバー 4名</span><span class="num">作成 2026-06-02</span></div>
+        </div>
+        <div class="work-head__actions">
+          <button class="btn btn--secondary" data-action="add-member"><svg><use href="#i-user"/></svg>メンバー追加</button>
+          <button class="btn btn--primary" data-action="new-work"><svg><use href="#i-plus"/></svg>新しいWork</button>
+        </div>
+      </div>
+      <div class="tabs" data-od-id="project-tabs">
+        <button class="tab active" data-ptab="overview">概要</button>
+        <button class="tab" data-ptab="members">メンバー</button>
+        <button class="tab" data-ptab="files">Files</button>
+        <button class="tab" data-ptab="knowledge">Knowledge</button>
+        <button class="tab" data-ptab="artifacts">Artifacts</button>
+      </div>
+      <div class="ppanel active" data-ppanel="overview" id="proj-overview"></div>
+      <div class="ppanel" data-ppanel="members" id="proj-members"></div>
+      <div class="ppanel" data-ppanel="files" id="proj-files"></div>
+      <div class="ppanel" data-ppanel="knowledge" id="proj-knowledge"></div>
+      <div class="ppanel" data-ppanel="artifacts" id="proj-artifacts"></div>
+    </section>
+
+    <!-- ===== FILES ===== -->
+    <section class="view" data-view="files" data-od-id="screen-files">
+      <div class="page-head">
+        <div>
+          <h1>Files</h1>
+          <p class="sub">個人領域とProject領域のファイル管理</p>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--secondary" data-action="new-folder"><svg><use href="#i-plus"/></svg>新規フォルダ</button>
+          <button class="btn btn--primary" data-action="new-file"><svg><use href="#i-upload"/></svg>アップロード</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <select class="select" id="file-scope" aria-label="保存先">
+          <option>個人領域（佐藤 直樹）</option>
+          <option>経費精算レポート自動化</option>
+          <option>社内FAQ構築</option>
+        </select>
+        <div class="crumbs" id="file-crumbs">
+          <a href="#">個人領域</a><span class="sep">/</span><a href="#">workspace</a><span class="sep">/</span><span class="cur">経費データ</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="search" style="max-width:240px">
+          <svg><use href="#i-search"/></svg>
+          <input type="search" placeholder="ファイルを検索" aria-label="ファイルを検索">
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="tbl" data-od-id="file-table">
+            <thead>
+              <tr><th>名前</th><th>種別</th><th>サイズ</th><th>所有者</th><th>更新日時</th><th>状態</th><th></th></tr>
+            </thead>
+            <tbody id="file-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== AGENTS ===== -->
+    <section class="view" data-view="agents" data-od-id="screen-agents">
+      <div class="page-head">
+        <div>
+          <h1>Agents</h1>
+          <p class="sub">あなたが作成したAIエージェントの実行状態・履歴・資源利用</p>
+        </div>
+        <div class="page-head__actions">
+          <span class="pill pill--info"><span class="dot"></span>Sandbox 隔離有効</span>
+          <button class="btn btn--primary" data-action="new-agent"><svg><use href="#i-plus"/></svg>新しいAgent</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="filter-chips" id="agent-filters">
+          <button class="chip active" data-filter="all">すべて</button>
+          <button class="chip" data-filter="実行中">実行中</button>
+          <button class="chip" data-filter="待機">待機</button>
+          <button class="chip" data-filter="完了">完了</button>
+          <button class="chip" data-filter="失敗">失敗</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="search" style="max-width:240px">
+          <svg><use href="#i-search"/></svg>
+          <input type="search" placeholder="Agentを検索" aria-label="Agentを検索">
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="tbl" data-od-id="agent-table">
+            <thead>
+              <tr><th>名前</th><th>説明</th><th>状態</th><th>モデル</th><th>履歴</th><th>資源利用</th><th>最終実行</th><th></th></tr>
+            </thead>
+            <tbody id="agent-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ADMIN ===== -->
+    <section class="view" data-view="admin" data-od-id="screen-admin">
+      <div class="page-head">
+        <div>
+          <h1>Admin</h1>
+          <p class="sub">システム・容量・実行・利用者・監査の管理</p>
+        </div>
+        <div class="page-head__actions">
+          <span class="pill pill--info"><span class="dot"></span>全体保護: 通常</span>
+        </div>
+      </div>
+      <div class="tabs" data-od-id="admin-tabs">
+        <button class="tab active" data-atab="dashboard">ダッシュボード</button>
+        <button class="tab" data-atab="users">利用者管理</button>
+        <button class="tab" data-atab="projects">Project管理</button>
+        <button class="tab" data-atab="ai">AI設定</button>
+        <button class="tab" data-atab="audit">監査ログ</button>
+      </div>
+
+      <!-- dashboard -->
+      <div class="ppanel active" data-apanel="dashboard">
+        <div class="attention">
+          <svg><use href="#i-alert"/></svg>
+          <div class="att-items" id="admin-attention"></div>
+        </div>
+        <div class="stats" id="admin-stats"></div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card__head"><h2>ストレージ /mnt/storage</h2><span class="pill pill--success"><span class="dot"></span>マウント済み</span></div>
+            <div class="card__body">
+              <div class="meter">
+                <div class="meter__head"><span>使用量</span><span class="num">1.10 TiB / 9.1 TiB（12.1%）</span></div>
+                <div class="meter__bar" style="height:12px"><i class="acc" style="width:12.1%"></i></div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+                <span class="tag">70% 注意</span><span class="tag">80% 拡張計画</span><span class="tag">85% 管理者警告</span><span class="tag">90% 制限</span><span class="tag">95% 緊急保護</span>
+              </div>
+              <div style="margin-top:14px">
+                <div class="kv"><span class="k">期待UUID</span><span class="v mono">一致</span></div>
+                <div class="kv"><span class="k">I/O 状態</span><span class="v">正常</span></div>
+                <div class="kv"><span class="k">読み取り専用</span><span class="v">なし</span></div>
+                <div class="kv"><span class="k">S.M.A.R.T.</span><span class="v">正常（温度 38℃）</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__head"><h2>バックアップと運用</h2></div>
+            <div class="card__body">
+              <div class="kv"><span class="k">最終バックアップ</span><span class="v num">成功 · 08-19 02:00</span></div>
+              <div class="kv"><span class="k">最終復元試験</span><span class="v num">成功 · 08-01</span></div>
+              <div class="kv"><span class="k">保存先</span><span class="v">別系統ストレージ</span></div>
+              <div class="kv"><span class="k">保持世代</span><span class="v num">14世代（予定）</span></div>
+              <div class="kv"><span class="k">DeepSeek API</span><span class="v"><span class="conn"><span class="dot"></span>正常</span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card__head"><h2>Agent 実行状況</h2><a href="#" data-goto="agents" style="font-size:12.5px;font-weight:550">Agents 画面へ</a></div>
+          <div class="card__body card__body--flush">
+            <div class="table-wrap">
+              <table class="tbl">
+                <thead><tr><th>名前</th><th>説明</th><th>状態</th><th>最終実行</th><th>資源利用</th></tr></thead>
+                <tbody id="admin-agent-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- users -->
+      <div class="ppanel" data-apanel="users">
+        <div class="toolbar">
+          <div class="search" style="max-width:260px"><svg><use href="#i-search"/></svg><input type="search" placeholder="利用者を検索" aria-label="利用者を検索"></div>
+          <div class="spacer"></div>
+          <button class="btn btn--secondary" data-action="new-user"><svg><use href="#i-plus"/></svg>利用者を追加</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="tbl" data-od-id="admin-users-table">
+              <thead><tr><th>利用者</th><th>役割</th><th>Quota</th><th>使用量</th><th>状態</th><th>最終ログイン</th><th></th></tr></thead>
+              <tbody id="admin-users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- projects -->
+      <div class="ppanel" data-apanel="projects">
+        <div class="card">
+          <div class="table-wrap">
+            <table class="tbl" data-od-id="admin-projects-table">
+              <thead><tr><th>Project</th><th>所有者</th><th>メンバー</th><th>Quota</th><th>使用量</th><th>状態</th><th></th></tr></thead>
+              <tbody id="admin-projects-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ai settings -->
+      <div class="ppanel" data-apanel="ai">
+        <div class="grid2">
+          <div class="card">
+            <div class="card__head"><h2>AI プロバイダ</h2></div>
+            <div class="card__body">
+              <div class="kv"><span class="k">Provider</span><span class="v">DeepSeek API</span></div>
+              <div class="kv"><span class="k">モデル</span><span class="v">deepseek-chat</span></div>
+              <div class="field" style="margin-top:14px">
+                <label for="ai-apikey">APIキー</label>
+                <div style="display:flex;gap:6px">
+                  <input class="input" type="password" id="ai-apikey" placeholder="sk-..." autocomplete="off" spellcheck="false">
+                  <button class="iconbtn" id="ai-apikey-toggle" type="button" aria-label="APIキーを表示/非表示"><svg><use href="#i-eye"/></svg></button>
+                </div>
+                <div class="hint" id="ai-key-state">保存状態: 未設定</div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px">
+                <button class="btn btn--primary" id="ai-key-test">テスト接続</button>
+                <button class="btn btn--secondary" id="ai-key-save">保存</button>
+                <button class="btn btn--secondary" id="ai-key-clear">クリア</button>
+              </div>
+              <div class="kv"><span class="k">Key の保存先</span><span class="v">Secret 管理基盤</span></div>
+              <div class="kv"><span class="k">接続状態</span><span class="v"><span class="conn" id="ai-conn"><span class="dot"></span>正常</span></span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__head"><h2>利用制限</h2></div>
+            <div class="card__body">
+              <div class="kv"><span class="k">同時Agent実行数</span><span class="v num">3（上限）</span></div>
+              <div class="kv"><span class="k">リクエスト/分</span><span class="v num">120</span></div>
+              <div class="kv"><span class="k">タイムアウト</span><span class="v num">120 秒</span></div>
+              <div class="kv"><span class="k">再試行上限</span><span class="v num">2 回</span></div>
+              <div class="kv"><span class="k">Sandbox ネットワーク</span><span class="v">既定拒否</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card__head"><h2>今月の利用状況</h2></div>
+          <div class="card__body">
+            <div class="grid2">
+              <div class="kv"><span class="k">リクエスト数</span><span class="v num">12,480</span></div>
+              <div class="kv"><span class="k">入力トークン</span><span class="v num">8.2 M</span></div>
+              <div class="kv"><span class="k">出力トークン</span><span class="v num">1.4 M</span></div>
+              <div class="kv"><span class="k">平均遅延</span><span class="v num">1.8 秒</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- audit -->
+      <div class="ppanel" data-apanel="audit">
+        <div class="toolbar">
+          <select class="select" id="audit-action" aria-label="アクション種別"><option value="all">すべてのアクション</option><option>LOGIN</option><option>FILE_*</option><option>WORK_*/AGENT_*</option><option>PROJECT_*</option><option>ARTIFACT_*</option></select>
+          <select class="select" id="audit-result" aria-label="結果"><option value="all">すべての結果</option><option>成功</option><option>失敗</option><option>拒否</option></select>
+          <div class="spacer"></div>
+          <button class="btn btn--secondary" data-action="export-audit"><svg><use href="#i-download"/></svg>CSV出力</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="tbl" data-od-id="audit-table">
+              <thead><tr><th>時刻</th><th>利用者</th><th>アクション</th><th>対象</th><th>結果</th><th>IP</th></tr></thead>
+              <tbody id="audit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- footer -->
+  <footer class="footer" data-od-id="app-footer">
+    <div class="f-storage" style="margin-right:6px">
+      <svg style="width:13px;height:13px;color:var(--muted)"><use href="#i-db"/></svg>
+      <span class="num" style="color:var(--muted)">10TB · 12.1%</span>
+      <span class="bar"><i style="width:12.1%"></i><span class="tick" style="left:70%"></span><span class="tick" style="left:90%"></span></span>
+    </div>
+    <div class="f-item"><span class="conn"><span class="dot"></span>DeepSeek API 正常</span></div>
+    <span class="sep">|</span>
+    <div class="f-item"><svg style="color:var(--accent-text)"><use href="#i-work"/></svg><span id="footer-running">実行中 1件</span></div>
+    <div class="f-grow"></div>
+    <div class="f-item"><svg><use href="#i-check"/></svg><span>バックアップ: 最終成功 昨日 02:00</span></div>
+    <span class="sep">|</span>
+    <a href="#" class="f-item" style="color:var(--muted)"><svg><use href="#i-help"/></svg><span>ヘルプ</span></a>
+  </footer>
+</div>
+
+<input type="file" id="file-input" multiple style="display:none">
+
+<div class="modal-overlay" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__head"><h3 id="modal-title">タイトル</h3><button class="iconbtn" id="modal-close" aria-label="閉じる"><svg><use href="#i-x"/></svg></button></div>
+    <div class="modal__body" id="modal-body"></div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" id="modal-cancel">キャンセル</button>
+      <button class="btn btn--primary" id="modal-save">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="confirm" hidden>
+  <div class="modal modal--sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal__head"><h3 id="confirm-title">確認</h3></div>
+    <div class="modal__body" id="confirm-body"></div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" id="confirm-cancel">キャンセル</button>
+      <button class="btn btn--danger" id="confirm-ok">削除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"><svg><use href="#i-check"/></svg><span id="toast-text"></span></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- helpers ---------- */
+  function $(s,r){ return (r||document).querySelector(s); }
+  function $all(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); }
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function uid(p){ return p+"-"+Math.random().toString(36).slice(2,8); }
+  function nowStamp(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+  function nowDate(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function rand(a,b){ return Math.floor(a + Math.random()*(b-a)); }
+  function findById(arr,id){ for(var i=0;i<arr.length;i++){ if(arr[i].id===id) return arr[i]; } return null; }
+  function shortGoal(g){ return g.length>34 ? g.slice(0,34)+"…" : g; }
+  function fmtSize(bytes){
+    if(bytes==null) return "—";
+    if(bytes < 1024) return bytes+" B";
+    if(bytes < 1048576) return (bytes/1024).toFixed(1)+" KB";
+    if(bytes < 1073741824) return (bytes/1048576).toFixed(1)+" MB";
+    return (bytes/1073741824).toFixed(2)+" GB";
+  }
+  function detectType(name, mime){
+    var ext = (name||"").split(".").pop().toLowerCase();
+    var map = { pdf:"PDF", csv:"CSV", xlsx:"Excel", xls:"Excel", docx:"Word", doc:"Word", pptx:"PowerPoint", ppt:"PowerPoint",
+      md:"Markdown", html:"HTML", htm:"HTML", py:"Python", js:"JavaScript", ts:"TypeScript", json:"JSON", css:"CSS", sql:"SQL", sh:"Shell",
+      zip:"圧縮", gz:"圧縮", tar:"圧縮", png:"画像", jpg:"画像", jpeg:"画像", gif:"画像", svg:"画像", webp:"画像", txt:"テキスト" };
+    if(map[ext]) return map[ext];
+    if(mime){ if(mime.indexOf("image/")===0) return "画像"; if(mime.indexOf("text/")===0) return "テキスト"; if(mime.indexOf("pdf")>=0) return "PDF"; }
+    return "その他";
+  }
+
+  /* ---------- default store ---------- */
+  function defaultStore(){
+    return {
+      currentProject: "経費精算レポート自動化",
+      conversations: [
+        { id:"c1", title:"経費データの前処理について", project:"経費精算", time:"10分前", last:"重複行の判定方法とNULL値の扱い · deepseek-chat",
+          messages:[
+            {role:"user", name:"佐藤 直樹", meta:"2026-08-19 09:42", content:"<p>経費データの前処理で、重複行の判定はどうすれば良いですか？</p>", attach:"expense_2026Q3.csv"},
+            {role:"ai", name:"Assistant", model:"deepseek-chat", meta:"2026-08-19 09:42", tokens:"1,204", content:"<p>重複行の判定は、業務上「同一経費」とみなすキーを決めるのが先です。以下を目安にしてください。</p><ul><li>完全一致（全列）より、<b>取引ID・日付・金額・部門</b>の組で判定するのが実務的です。</li><li>金額は小数誤差を避けるため、文字列ではなく数値の四捨五入で比較します。</li></ul><div class=\"code\"><span class=\"c-cm\"># キー列の組で重複を検出</span><br>df.duplicated(subset=[\"txn_id\",\"date\",\"amount\",\"dept\"])</div><p>同一IDで金額が異なる場合は、先に<b>入力ミスか別経費か</b>を確認してから除外してください。</p>"},
+            {role:"user", name:"佐藤 直樹", meta:"2026-08-19 09:44", content:"<p>NULL値の扱いについても教えてください。</p>"},
+            {role:"ai", name:"Assistant", model:"deepseek-chat", meta:"2026-08-19 09:44", tokens:"762", content:"<p>NULLは「欠損」と「意味のある空」を区別して扱います。</p><ul><li>必須項目の欠損 → レコードごと除外または担当へ差し戻し。</li><li>任意項目の空 → 集計時に無視する、で問題ありません。</li><li>集計前に <span class=\"mono\">isna().sum()</span> で欠損率を確認し、全体の5%超は原因を調査します。</li></ul>"}
+          ]},
+        { id:"c2", title:"Q3レポートの要約案", project:"経費精算", time:"昨日", last:"レポート構成の提案と見出し案の生成", messages:[] },
+        { id:"c3", title:"API利用量の確認方法", project:"個人", time:"2日前", last:"利用量メトリクスの見方と上限について", messages:[] },
+        { id:"c4", title:"申請書テンプレートのレビュー", project:"経費精算", time:"3日前", last:"経費申請書の表現を整えました", messages:[] }
+      ],
+      works: [
+        { id:"w1", title:"Q3経費レポートの自動生成", project:"経費精算", status:"awaiting_review", started:"08-19 09:20", updated:"08-19 09:41",
+          goal:"経費精算レポート自動化プロジェクトの経費データ（expense_2026Q3.csv）から、四半期経費レポートを HTML と PDF の両形式で生成する。部門別・月別の集計と、前四半期比の増減を含める。",
+          plan:["入力データの検証と前処理","部門別・月別の集計表を生成","レポート本文（HTML）を生成","PDF を生成","成果物の検証と保存"] },
+        { id:"w3", title:"社内FAQのドラフト作成", project:"社内FAQ", status:"running", started:"08-19 09:05", updated:"08-19 09:40",
+          goal:"社内規程文書からよくある質問を抽出し、回答ドラフトを Markdown で生成する。",
+          plan:["規程文書の取り込み","質問候補の抽出","回答ドラフトの生成","レビュー用Markdown生成"] },
+        { id:"w2", title:"経費データ整形スクリプトの作成", project:"経費精算", status:"succeeded", started:"08-18 15:30", updated:"08-18 16:02",
+          goal:"経費データの前処理（重複除去・NULL補完・金額正規化）を行う Python スクリプトを成果物として生成し、Project領域へ保存する。",
+          plan:["入力データの検証","重複除去ロジックの実装","NULL補完と金額正規化","スクリプト成果物の生成と保存"] },
+        { id:"w4", title:"売上予測モデル PoC", project:"分析PoC", status:"failed", started:"08-18 11:10", updated:"08-18 11:42",
+          goal:"過去の売上実績から次期売上を予測するモデルを試作し、精度を評価する。",
+          plan:["データ準備","特徴量エンジニアリング","モデル学習","精度評価"] }
+      ],
+      projects: [
+        { id:"p1", name:"経費精算レポート自動化", folderName:"expense-report", desc:"経費データの集計・整形・四半期レポート生成を AI で自動化するプロジェクト。Pilot で効果測定中。", owner:"佐藤 直樹", ownerId:"naoki.sato", usage:128, quota:500, status:"進行中", created:"2026-06-02", updated:"08-19 09:41", filter:"active owner",
+          members:[{name:"佐藤 直樹", id:"naoki.sato", role:"所有者", status:"有効", date:"2026-06-02"},{name:"鈴木 美咲", id:"m.suzuki", role:"メンバー", status:"有効", date:"2026-06-05"},{name:"田中 健太", id:"k.tanaka", role:"メンバー", status:"有効", date:"2026-06-05"},{name:"山田 由紀", id:"y.yamada", role:"閲覧者", status:"停止", date:"2026-07-11"}],
+          knowledge:[{title:"経費精算規程（2026年度版）", meta:"PDF · 1.8 MB · 更新 08-01", status:"公開"},{title:"部門コード表", meta:"CSV · 12 KB · 更新 07-18", status:"公開"},{title:"レポートひな型（ドラフト）", meta:"Markdown · 8 KB · 更新 08-15", status:"確認中"}],
+          artifacts:[{name:"report_2026Q3.html", meta:"128 KB · HTML · Work「Q3経費レポートの自動生成」", icon:"html", status:"採用"},{name:"clean_expense.py", meta:"4.2 KB · Python · Work「経費データ整形スクリプトの作成」", icon:"md", status:"採用"},{name:"summary_2026Q3.xlsx", meta:"96 KB · Excel · Work「Q3経費レポートの自動生成」", icon:"xlsx", status:"確認中"}] },
+        { id:"p2", name:"社内FAQ構築", folderName:"company-faq", desc:"社内規程からよくある質問を抽出し体系化", owner:"鈴木 美咲", ownerId:"m.suzuki", usage:42, quota:100, status:"進行中", created:"2026-07-01", updated:"08-18 17:22", filter:"active",
+          members:[{name:"鈴木 美咲", id:"m.suzuki", role:"所有者", status:"有効", date:"2026-07-01"},{name:"佐藤 直樹", id:"naoki.sato", role:"メンバー", status:"有効", date:"2026-07-03"},{name:"山田 由紀", id:"y.yamada", role:"メンバー", status:"有効", date:"2026-07-03"}],
+          knowledge:[{title:"就業規則（2026年度版）", meta:"PDF · 3.2 MB · 更新 07-01", status:"公開"}], artifacts:[] },
+        { id:"p3", name:"データ分析基盤 PoC", folderName:"data-analytics-poc", desc:"売上予測モデルの試作と精度評価", owner:"田中 健太", ownerId:"k.tanaka", usage:15, quota:50, status:"終了", created:"2026-05-20", updated:"08-12 10:03", filter:"ended",
+          members:[{name:"田中 健太", id:"k.tanaka", role:"所有者", status:"有効", date:"2026-05-20"},{name:"佐藤 直樹", id:"naoki.sato", role:"メンバー", status:"有効", date:"2026-05-22"}], knowledge:[], artifacts:[] }
+      ],
+      files: [
+        { id:"f0", name:"経費データ", type:"フォルダ", size:"—", owner:"佐藤 直樹", updated:"08-19 09:00", status:"利用可能", scope:"個人", kind:"folder" },
+        { id:"f1", name:"expense_2026Q3.csv", type:"CSV", size:"2.4 MB", owner:"佐藤 直樹", updated:"08-19 09:12", status:"利用可能", scope:"経費精算レポート自動化" },
+        { id:"f2", name:"経費規程_2026.pdf", type:"PDF", size:"1.8 MB", owner:"佐藤 直樹", updated:"08-01 14:30", status:"利用可能", scope:"個人" },
+        { id:"f3", name:"部門コード表.csv", type:"CSV", size:"12 KB", owner:"佐藤 直樹", updated:"07-18 09:00", status:"利用可能", scope:"個人" },
+        { id:"f4", name:"ドラフトメモ.md", type:"Markdown", size:"8 KB", owner:"佐藤 直樹", updated:"08-15 11:20", status:"利用可能", scope:"個人" },
+        { id:"f5", name:"raw_dump_0819.xlsx", type:"Excel", size:"18.7 MB", owner:"佐藤 直樹", updated:"08-19 09:40", status:"アップロード中", scope:"個人" },
+        { id:"f6", name:"report_2026Q3.html", type:"HTML", size:"128 KB", owner:"佐藤 直樹", updated:"08-18 16:01", status:"利用可能", scope:"経費精算レポート自動化" },
+        { id:"f7", name:"clean_expense.py", type:"Python", size:"4.2 KB", owner:"佐藤 直樹", updated:"08-18 16:00", status:"利用可能", scope:"経費精算レポート自動化" }
+      ],
+      agents: [
+        { id:"a1", name:"経費レポート生成エージェント", desc:"経費データから四半期レポートを自動生成する", status:"待機", model:"deepseek-chat", runs:12, res:"—", last:"08-19 09:05", owner:"naoki.sato" },
+        { id:"a2", name:"FAQドラフト作成エージェント", desc:"社内規程からFAQの回答ドラフトを作成する", status:"実行中", model:"deepseek-chat", runs:5, res:"40% / 1.2 GB", last:"08-19 09:40", owner:"naoki.sato" },
+        { id:"a3", name:"売上予測モデルエージェント", desc:"売上実績から次期売上を予測する", status:"失敗", model:"deepseek-chat", runs:3, res:"88% / 3.1 GB", last:"08-18 11:42", owner:"k.tanaka" },
+        { id:"a4", name:"データ整形エージェント", desc:"CSVの重複除去・NULL補完を行う", status:"完了", model:"deepseek-chat", runs:8, res:"12% / 0.8 GB", last:"08-18 16:02", owner:"naoki.sato" }
+      ],
+      users: [
+        { id:"naoki.sato", name:"佐藤 直樹", role:"IT・DX管理者", quota:"100 GB", usage:"34.2 GB", status:"有効", login:"08-19 09:20" },
+        { id:"m.suzuki", name:"鈴木 美咲", role:"プロジェクト所有者", quota:"100 GB", usage:"12.0 GB", status:"有効", login:"08-19 08:55" },
+        { id:"k.tanaka", name:"田中 健太", role:"利用者", quota:"100 GB", usage:"8.1 GB", status:"有効", login:"08-18 17:44" },
+        { id:"y.yamada", name:"山田 由紀", role:"利用者", quota:"100 GB", usage:"2.3 GB", status:"有効", login:"08-18 12:03" },
+        { id:"a.kobayashi", name:"小林 明", role:"利用者", quota:"100 GB", usage:"45.0 GB", status:"警告", login:"08-18 09:12" },
+        { id:"r.ito", name:"伊藤 亮", role:"利用者", quota:"100 GB", usage:"0.4 GB", status:"停止", login:"07-28 15:40" }
+      ],
+      audit: [
+        { t:"08-19 09:42:11", u:"naoki.sato", a:"FILE_UPLOAD", o:"expense_2026Q3.csv", r:"成功", ip:"10.0.4.21", cat:"FILE_*" },
+        { t:"08-19 09:20:03", u:"naoki.sato", a:"LOGIN", o:"—", r:"成功", ip:"10.0.4.21", cat:"LOGIN" },
+        { t:"08-19 09:20:01", u:"naoki.sato", a:"WORK_START", o:"WD-2047", r:"成功", ip:"10.0.4.21", cat:"WORK_*/AGENT_*" },
+        { t:"08-19 08:55:30", u:"m.suzuki", a:"FILE_DOWNLOAD", o:"経費規程_2026.pdf", r:"成功", ip:"10.0.4.18", cat:"FILE_*" },
+        { t:"08-19 08:51:12", u:"k.tanaka", a:"AGENT_START", o:"run_9f3a2c…", r:"成功", ip:"10.0.4.35", cat:"WORK_*/AGENT_*" },
+        { t:"08-18 18:03:44", u:"y.yamada", a:"PROJECT_UPDATE", o:"社内FAQ構築", r:"拒否", ip:"10.0.4.12", cat:"PROJECT_*" },
+        { t:"08-18 16:02:10", u:"naoki.sato", a:"ARTIFACT_SAVE", o:"clean_expense.py", r:"成功", ip:"10.0.4.21", cat:"ARTIFACT_*" },
+        { t:"08-18 11:42:05", u:"k.tanaka", a:"AGENT_FAIL", o:"run_7c81e2…", r:"失敗", ip:"10.0.4.35", cat:"WORK_*/AGENT_*" }
+      ]
+    };
+  }
+
+  /* ---------- store persistence ---------- */
+  var STORE_KEY = "mirai.store.v2";
+  var store;
+  try { var saved = localStorage.getItem(STORE_KEY); store = saved ? JSON.parse(saved) : defaultStore(); } catch(e){ store = defaultStore(); }
+  function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
+
+  /* ---------- view router ---------- */
+  var VIEWS = ["home","chat-list","chat-detail","work-list","work-detail","projects","project-detail","files","agents","admin"];
+  var currentView = "home";
+  var currentChatId = null, currentWorkId = null, currentProjectId = "p1";
+  var crumbMap = {
+    "home":"ホーム","chat-list":"Chat","chat-detail":"Chat / 会話詳細",
+    "work-list":"Work","work-detail":"Work / 詳細",
+    "projects":"Projects","project-detail":"Projects / 詳細",
+    "files":"Files","agents":"Agents","admin":"Admin"
+  };
+  function showView(name){
+    if(VIEWS.indexOf(name)===-1) name = "home";
+    currentView = name;
+    $all(".view").forEach(function(v){ v.classList.remove("active"); });
+    var el = $('.view[data-view="'+name+'"]');
+    if(el) el.classList.add("active");
+    $all(".nav a").forEach(function(a){
+      a.classList.toggle("active", a.getAttribute("data-nav")===name || (name==="work-detail" && a.getAttribute("data-nav")==="work-list") || (name==="chat-detail" && a.getAttribute("data-nav")==="chat-list") || (name==="project-detail" && a.getAttribute("data-nav")==="projects"));
+    });
+    var crumb = $("#header-crumb"); if(crumb) crumb.textContent = crumbMap[name] || "ホーム";
+    try{ localStorage.setItem("mirai.view", name); }catch(e){}
+    var main = $("#main"); if(main) main.scrollTop = 0;
+    closeDropdowns();
+  }
+  function navigateTo(name){
+    if(name==="chat-detail"){ openChat(currentChatId || (store.conversations[0]&&store.conversations[0].id)); }
+    else if(name==="work-detail"){ openWork(currentWorkId || (store.works[0]&&store.works[0].id)); }
+    else if(name==="project-detail"){ openProject(currentProjectId || (store.projects[0]&&store.projects[0].id)); }
+    else { showView(name); }
+  }
+
+  /* ---------- status pills ---------- */
+  var STATUS = {
+    awaiting_review:{cls:"pill--warn", label:"確認待ち"},
+    running:{cls:"pill--running", label:"実行中"},
+    succeeded:{cls:"pill--success", label:"完了"},
+    failed:{cls:"pill--danger", label:"失敗"},
+    cancelled:{cls:"pill--muted", label:"中止"}
+  };
+  function pill(s){ var x = STATUS[s]||{cls:"pill--muted",label:s}; return '<span class="pill '+x.cls+'"><span class="dot"></span>'+esc(x.label)+'</span>'; }
+  function filePill(s){ var m={"利用可能":"pill--success","アップロード中":"pill--running","検査中":"pill--info","失敗":"pill--danger"}; return '<span class="pill '+(m[s]||"pill--muted")+'"><span class="dot"></span>'+esc(s)+'</span>'; }
+  function userPill(s){ var m={"有効":"pill--success","警告":"pill--warn","停止":"pill--muted"}; return '<span class="pill '+(m[s]||"pill--muted")+'"><span class="dot"></span>'+esc(s)+'</span>'; }
+  function resultPill(r){ var m={"成功":"pill--success","失敗":"pill--danger","拒否":"pill--danger"}; return '<span class="pill '+(m[r]||"pill--muted")+'"><span class="dot"></span>'+esc(r)+'</span>'; }
+  function projPill(s){ return s==="進行中" ? '<span class="pill pill--success"><span class="dot"></span>進行中</span>' : '<span class="pill pill--muted"><span class="dot"></span>'+esc(s)+'</span>'; }
+  function knowledgePill(s){ return s==="公開" ? '<span class="pill pill--success"><span class="dot"></span>公開</span>' : '<span class="pill pill--warn"><span class="dot"></span>確認中</span>'; }
+
+  function actions(id, arr){
+    return '<span class="row-actions">'+arr.map(function(x){
+      var ref = x.ref!=null ? ' data-ref="'+esc(x.ref)+'"' : '';
+      var d = x.danger ? ' iconbtn--danger' : '';
+      return '<button class="iconbtn'+d+'" data-action="'+x.a+'" data-id="'+esc(id)+'"'+ref+' aria-label="'+esc(x.label)+'"><svg><use href="#'+x.icon+'"/></svg></button>';
+    }).join('')+'</span>';
+  }
+
+  /* ---------- render: home ---------- */
+  function renderHome(){
+    var awaiting = store.works.filter(function(w){return w.status==="awaiting_review";}).length;
+    var failed = store.works.filter(function(w){return w.status==="failed";}).length;
+    var items = [];
+    if(awaiting>0) items.push('<span><b>確認待ちのWork '+awaiting+'件</b> — <a href="#" data-goto="work-list">一覧を確認</a></span>');
+    if(failed>0) items.push('<span><b>失敗したWork '+failed+'件</b> — <a href="#" data-goto="work-list">詳細を見る</a></span>');
+    var ha = $("#home-attention"); if(ha) ha.innerHTML = items.join('') || '<span>現在、対応が必要な項目はありません。</span>';
+    var hr = $("#home-recent"); if(hr) hr.innerHTML = store.conversations.slice(0,3).map(function(c){
+      return '<li class="row" data-chat="'+c.id+'"><span class="row__ic"><svg><use href="#i-chat"/></svg></span><span class="row__main"><span class="row__title">'+esc(c.title)+'</span><span class="row__meta">'+esc(c.last||"")+'</span></span><span class="row__side"><span class="row__project">'+esc(c.project)+'</span><div class="row__time">'+esc(c.time)+'</div></span></li>';
+    }).join('');
+    var hw = $("#home-works"); if(hw) hw.innerHTML = store.works.filter(function(w){return w.status!=="succeeded";}).slice(0,3).map(function(w){
+      return '<li class="row" data-work="'+w.id+'"><span class="row__ic"><svg><use href="#i-work"/></svg></span><span class="row__main"><span class="row__title">'+esc(w.title)+'</span><span class="row__meta">'+esc(w.project)+' · 更新 '+esc(w.updated)+'</span></span><span class="row__side">'+pill(w.status)+'</span></li>';
+    }).join('');
+    var hu = $("#home-usage");
+    if(hu){
+      var me = store.users.filter(function(u){return u.id==="naoki.sato";})[0];
+      var meGb = me ? parseFloat(String(me.usage).replace(/[^0-9.]/g,"")||0) : 34.2;
+      var meQuota = me ? parseFloat(String(me.quota).replace(/[^0-9.]/g,"")||100) : 100;
+      var p0 = store.projects[0];
+      var pGb = p0 ? p0.usage : 128, pQuota = p0 ? p0.quota : 500;
+      hu.innerHTML =
+        '<div class="meter"><div class="meter__head"><span>個人領域（'+meQuota+' GB 上限）</span><span class="num">'+meGb+' GB</span></div><div class="meter__bar"><i class="acc" style="width:'+Math.min(100,Math.round(meGb/meQuota*100))+'%"></i></div></div>'+
+        '<div class="meter" style="margin-top:12px"><div class="meter__head"><span>'+esc(p0?p0.name:"Project")+'（'+pQuota+' GB 上限）</span><span class="num">'+pGb+' GB</span></div><div class="meter__bar"><i class="acc" style="width:'+Math.min(100,Math.round(pGb/pQuota*100))+'%"></i></div></div>'+
+        '<p class="muted" style="font-size:11.5px;margin:12px 0 0">システム全体 12.1% 使用（新規10TB HDD）</p>';
+    }
+  }
+
+  /* ---------- render: chat ---------- */
+  function renderChatList(){
+    var el = $("#chat-list-body"); if(!el) return;
+    el.innerHTML = store.conversations.map(function(c){
+      return '<li class="row" data-chat="'+c.id+'"><span class="row__ic"><svg><use href="#i-chat"/></svg></span><span class="row__main"><span class="row__title">'+esc(c.title)+'</span><span class="row__meta">'+esc(c.last||"")+'</span></span><span class="row__side"><span class="row__project">'+esc(c.project)+'</span><div class="row__time">'+esc(c.time)+'</div></span>'+actions(c.id,[{a:"rename-chat",icon:"i-edit",label:"題名を変更"},{a:"delete-chat",icon:"i-trash",label:"削除",danger:true}])+'</li>';
+    }).join('') || '<li class="row"><span class="row__main"><span class="row__meta">会話がありません。「新しいChat」から作成してください。</span></span></li>';
+  }
+  function openChat(id){
+    var c = findById(store.conversations, id) || store.conversations[0];
+    if(!c){ showView("chat-list"); return; }
+    currentChatId = c.id;
+    renderChatDetail(c.id);
+    showView("chat-detail");
+  }
+  function renderChatDetail(id){
+    var c = findById(store.conversations, id); if(!c) return;
+    var ctx = c.project==="個人" ? "個人ワークスペース" : c.project;
+    $("#chat-title").textContent = c.title;
+    $("#chat-ctx").textContent = ctx;
+    var scroll = $("#chat-scroll"); scroll.innerHTML = "";
+    c.messages.forEach(function(m){ appendMsg(m); });
+    if(!c.messages.length){
+      scroll.innerHTML = '<div class="msg msg--ai"><div class="avatar">AI</div><div class="msg__body"><div class="msg__content"><p class="muted">新しい会話です。質問や依頼を入力してください。</p></div></div></div>';
+    }
+    var tokens = c.messages.reduce(function(s,m){ return s + (parseInt(String(m.tokens||"0").replace(/,/g,""),10)||0); },0);
+    var attach = c.messages.filter(function(m){return m.attach;}).map(function(m){return m.attach;});
+    $("#chat-aside").innerHTML =
+      '<h3>プロジェクト文脈</h3><div class="aside-project"><svg><use href="#i-projects"/></svg><span>'+esc(ctx)+'</span></div>'+
+      '<h3>モデル</h3><div class="kv"><span class="k">モデル</span><span class="v">deepseek-chat</span></div><div class="kv"><span class="k">Provider</span><span class="v">DeepSeek API</span></div>'+
+      '<h3>利用量（この会話）</h3><div class="kv"><span class="k">合計トークン</span><span class="v num">'+tokens.toLocaleString()+'</span></div><div class="kv"><span class="k">メッセージ数</span><span class="v num">'+c.messages.length+'</span></div>'+
+      (attach.length ? '<h3>添付ファイル</h3>'+attach.map(function(a){return '<div class="artifact"><span class="artifact__ic artifact__ic--xlsx"><svg><use href="#i-file"/></svg></span><div><div class="artifact__name">'+esc(a)+'</div><div class="artifact__meta">添付</div></div></div>';}).join('') : '');
+    scroll.scrollTop = scroll.scrollHeight;
+  }
+  function appendMsg(m){
+    var wrap = document.createElement("div");
+    wrap.className = "msg " + (m.role==="ai" ? "msg--ai":"msg--user");
+    wrap.innerHTML = '<div class="avatar">'+(m.role==="ai"?"AI":"佐")+'</div><div class="msg__body"><div class="msg__meta">'+
+      (m.role==="ai" ? esc(m.name)+" · "+esc(m.model)+" · " : esc(m.name)+" · ")+'<span class="num">'+esc(m.meta)+'</span></div>'+
+      '<div class="msg__content">'+m.content+'</div>'+
+      (m.attach?'<div class="msg__tags"><span class="tag"><svg><use href="#i-file"/></svg>'+esc(m.attach)+'</span></div>':'')+
+      (m.tokens?'<div class="usage-chip">'+esc(m.tokens)+' tokens</div>':'')+'</div>';
+    $("#chat-scroll").appendChild(wrap);
+  }
+  function scrollChat(){ var s=$("#chat-scroll"); if(s) s.scrollTop = s.scrollHeight; }
+  function sendChat(){
+    var c = findById(store.conversations, currentChatId) || store.conversations[0];
+    if(!c) return;
+    var input = $("#chat-input"); var val = input.value.trim(); if(!val) return;
+    var stamp = nowStamp();
+    c.messages.push({role:"user", name:"佐藤 直樹", meta:stamp, content:"<p>"+esc(val)+"</p>"});
+    input.value = "";
+    appendMsg(c.messages[c.messages.length-1]);
+    var typing = document.createElement("div"); typing.className="msg msg--ai"; typing.id="typing";
+    typing.innerHTML = '<div class="avatar">AI</div><div class="msg__body"><div class="msg__meta">Assistant · deepseek-chat</div><div class="msg__content"><p class="muted">回答を生成しています…</p></div></div>';
+    $("#chat-scroll").appendChild(typing); scrollChat();
+    setTimeout(function(){
+      var t = document.getElementById("typing"); if(t) t.remove();
+      c.messages.push({role:"ai", name:"Assistant", model:"deepseek-chat", meta:nowStamp(), tokens:String(rand(300,1500)), content:"<p>ご質問を承りました。前処理の観点では、まず<b>対象列の型と欠損率を確認</b>し、その後に重複除去・外れ値の扱いを決めるのが安全です。具体的なファイルを添付いただければ、より踏み込んだ案を提示できます。</p><p>この回答はサンプルです。実際の応答は DeepSeek API が生成します。</p>"});
+      appendMsg(c.messages[c.messages.length-1]); scrollChat();
+      c.time = "たった今"; c.last = "重複行の判定方法とNULL値の扱い · deepseek-chat";
+      saveStore(); renderChatList(); renderHome();
+    }, 900);
+    saveStore();
+  }
+
+  /* ---------- render: work ---------- */
+  var workFilter = "all";
+  function renderWorkList(){
+    var el = $("#work-tbody"); if(!el) return;
+    var list = workFilter==="all" ? store.works : store.works.filter(function(w){return w.status===workFilter;});
+    el.innerHTML = list.map(function(w){
+      var done = 0;
+      if(w.status==="succeeded") done = w.plan.length;
+      else if(w.status==="failed") done = 2;
+      else if(w.status==="running") done = Math.min(3, w.plan.length);
+      var prog = done+" / "+w.plan.length+" タスク";
+      if(w.status==="failed") prog += "（エラー）";
+      return '<tr data-work="'+w.id+'" data-status="'+w.status+'"><td><div class="cell-title">'+esc(w.title)+'</div><div class="cell-sub">'+esc(shortGoal(w.goal))+'</div></td><td><span class="row__project">'+esc(w.project)+'</span></td><td>'+pill(w.status)+'</td><td><div class="cell-sub">'+prog+'</div></td><td class="num">'+esc(w.started)+'</td><td class="num">'+esc(w.updated)+'</td><td style="text-align:right">'+actions(w.id,[{a:"edit-work",icon:"i-edit",label:"Goalを編集"},{a:"delete-work",icon:"i-trash",label:"削除",danger:true}])+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="cell-sub">Workがありません。「新しいWork」から作成してください。</td></tr>';
+  }
+  function taskState(i,s){
+    if(s==="succeeded") return "done";
+    if(s==="failed") return i<=1 ? "done" : (i===2 ? "err":"");
+    if(s==="running") return i<=2 ? "done" : (i===3 ? "active":"");
+    return "";
+  }
+  function taskStateLabel(i,s){
+    if(s==="succeeded") return "完了";
+    if(s==="failed") return i<=1?"完了":(i===2?"失敗":"未実行");
+    if(s==="running") return i<=2?"完了":(i===3?"実行中":"待機中");
+    if(s==="cancelled") return "中止";
+    return "待機中";
+  }
+  function artifactItems(w){
+    var items = [
+      {name:"成果物_"+w.id+".html", meta:"128 KB · HTML · 生成 "+w.updated, icon:"html", status:"採用"},
+      {name:"成果物_"+w.id+".md", meta:"4.2 KB · Markdown · 生成 "+w.updated, icon:"md", status:"確認中"}
+    ];
+    return items.map(function(a){ return '<div class="artifact"><span class="artifact__ic artifact__ic--'+a.icon+'"><svg><use href="#i-file"/></svg></span><div><div class="artifact__name">'+esc(a.name)+'</div><div class="artifact__meta">'+esc(a.meta)+'</div></div><span style="margin-left:auto" class="pill '+(a.status==="採用"?"pill--success":"pill--warn")+'"><span class="dot"></span>'+a.status+'</span></div>'; }).join('');
+  }
+  function openWork(id){
+    var w = findById(store.works, id);
+    if(!w) w = store.works[0];
+    if(!w){ showView("work-list"); return; }
+    currentWorkId = w.id;
+    $("#work-title").textContent = w.title;
+    $("#work-sub").innerHTML = '<span class="row__project">'+esc(w.project)+'</span><span>deepseek-chat</span><span class="num">開始 '+esc(w.started)+'</span>';
+    $("#work-goal").textContent = w.goal;
+    var sp = STATUS[w.status]||{cls:"pill--muted",label:w.status};
+    var p = $("#work-status-pill"); p.className = "pill "+sp.cls; p.innerHTML='<span class="dot"></span>'+esc(sp.label);
+    var tl = $("#work-timeline"); tl.innerHTML = "";
+    (w.plan||[]).forEach(function(t,i){
+      var st = taskState(i,w.status);
+      var node = st==="done" ? '<svg><use href="#i-check"/></svg>' : (st==="err" ? '<svg><use href="#i-x"/></svg>' : String(i+1));
+      tl.insertAdjacentHTML("beforeend", '<li class="tl-item '+st+'"><span class="tl-node">'+node+'</span><div><div class="tl-title">'+esc(t)+'</div><div class="tl-meta">Task '+(i+1)+' / '+(w.plan||[]).length+' · <span class="num">'+taskStateLabel(i,w.status)+'</span></div></div></li>');
+    });
+    $("#plan-state-label").textContent = w.status==="awaiting_review" ? "承認待ち" : (w.status==="cancelled" ? "中止" : "承認済み");
+    var toolLog = $("#work-tool-log"), artifacts = $("#work-artifacts-body");
+    var rp = $("#work-review-box p"), adopt = $("#review-adopt"), rerun = $("#review-rerun"), primary = $("#work-primary-action");
+    if(w.status==="awaiting_review"){
+      toolLog.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">実行開始後に、Sandbox内で許可されたToolの実行結果がここに表示されます。危険操作は実行前に確認を求めます。</p>';
+      artifacts.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">まだ成果物はありません。実行完了後にここへ生成されます。</p>';
+      rp.textContent = "実行が完了すると、成果物の内容・形式・保存先を確認し、採用・再実行・終了を選択できます。";
+      adopt.disabled=true; rerun.disabled=true;
+      primary.disabled=false; primary.innerHTML='<svg><use href="#i-check"/></svg>計画を承認して実行';
+    } else if(w.status==="running"){
+      toolLog.innerHTML = '<div class="kv"><span class="k">File（読込）</span><span class="v pill pill--success" style="height:20px"><span class="dot"></span>成功</span></div><div class="kv"><span class="k">Shell（実行）</span><span class="v pill pill--running" style="height:20px"><span class="dot"></span>実行中</span></div>';
+      artifacts.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">実行中です。完了後に成果物がここへ生成されます。</p>';
+      rp.textContent = "実行中です。完了後に Review が可能になります。";
+      adopt.disabled=true; rerun.disabled=true;
+      primary.disabled=false; primary.innerHTML='<svg><use href="#i-x"/></svg>中止';
+    } else if(w.status==="succeeded"){
+      toolLog.innerHTML = '<div class="kv"><span class="k">Shell（実行）</span><span class="v pill pill--success" style="height:20px"><span class="dot"></span>成功</span></div><div class="kv"><span class="k">Artifact（書出）</span><span class="v pill pill--success" style="height:20px"><span class="dot"></span>成功</span></div>';
+      artifacts.innerHTML = artifactItems(w);
+      rp.textContent = "成果物の内容・形式・保存先を確認し、採用または再実行を選択してください。";
+      adopt.disabled=false; rerun.disabled=false;
+      primary.disabled=false; primary.innerHTML='<svg><use href="#i-arrow-r"/></svg>再実行';
+    } else if(w.status==="failed"){
+      toolLog.innerHTML = '<div class="kv"><span class="k">File（読込）</span><span class="v pill pill--success" style="height:20px"><span class="dot"></span>成功</span></div><div class="kv"><span class="k">Shell（実行）</span><span class="v pill pill--danger" style="height:20px"><span class="dot"></span>失敗</span></div>';
+      artifacts.innerHTML = '<div class="alert alert--danger"><svg><use href="#i-alert"/></svg><span>実行時にエラーが発生しました（run_7c81e2…）。入力データや制約を確認してください。</span></div>';
+      rp.textContent = "実行が失敗しました。エラーと実行IDを確認し、必要に応じて再実行してください。";
+      adopt.disabled=true; rerun.disabled=false;
+      primary.disabled=false; primary.innerHTML='<svg><use href="#i-arrow-r"/></svg>再実行';
+    } else {
+      toolLog.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">実行は中止されました。</p>';
+      artifacts.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">成果物はありません。</p>';
+      rp.textContent = "実行が中止されました。必要に応じて再実行してください。";
+      adopt.disabled=true; rerun.disabled=false;
+      primary.disabled=false; primary.innerHTML='<svg><use href="#i-arrow-r"/></svg>再実行';
+    }
+    showView("work-detail");
+  }
+  var workTimer = null;
+  function runSimulation(id){
+    var steps = 0;
+    clearInterval(workTimer);
+    workTimer = setInterval(function(){
+      var w = findById(store.works, id); if(!w){ clearInterval(workTimer); return; }
+      steps++;
+      if(steps>=3){
+        clearInterval(workTimer);
+        w.status="succeeded"; w.updated=nowStamp();
+        saveStore();
+        if(currentView==="work-detail" && currentWorkId===id) openWork(id);
+        renderWorkList(); renderHome();
+        toast("Work が完了しました。Review に進んでください。");
+      } else {
+        if(currentView==="work-detail" && currentWorkId===id) openWork(id);
+      }
+    }, 1200);
+  }
+
+  /* ---------- render: projects ---------- */
+  var projectFilter = "all";
+  function renderProjects(){
+    var el = $("#project-tbody"); if(!el) return;
+    var list = store.projects.filter(function(p){ return projectFilter==="all" || (p.filter||"").indexOf(projectFilter)>-1; });
+    el.innerHTML = list.map(function(p){
+      var pct = Math.round(p.usage/p.quota*100);
+      return '<tr data-project="'+p.id+'" data-filter="'+esc(p.filter||"")+'"><td><div class="cell-title">'+esc(p.name)+'</div><div class="cell-sub">'+esc(p.desc)+'</div></td><td>'+esc(p.owner)+'</td><td class="num">'+p.members.length+'名</td><td><div class="cell-title num">'+p.usage+' GB</div><div class="meter" style="max-width:96px;margin-top:3px"><div class="meter__bar" style="height:5px"><i class="acc" style="width:'+pct+'%"></i></div></div></td><td class="num">'+p.quota+' GB</td><td>'+projPill(p.status)+'</td><td class="num">'+esc(p.updated)+'</td><td style="text-align:right">'+actions(p.id,[{a:"edit-project",icon:"i-edit",label:"編集"},{a:"delete-project",icon:"i-trash",label:"削除",danger:true}])+'</td></tr>';
+    }).join('') || '<tr><td colspan="8" class="cell-sub">Projectがありません。</td></tr>';
+  }
+  function openProject(id){
+    var p = findById(store.projects, id) || store.projects[0];
+    if(!p){ showView("projects"); return; }
+    currentProjectId = p.id;
+    var sp = $("#proj-status-pill"); sp.className = "pill "+(p.status==="進行中"?"pill--success":"pill--muted"); sp.innerHTML = '<span class="dot"></span>'+esc(p.status);
+    $("#proj-title").textContent = p.name;
+    $("#proj-sub").innerHTML = '<span>所有者: '+esc(p.owner)+'</span><span>メンバー '+p.members.length+'名</span><span class="num">作成 '+esc(p.created)+'</span>';
+    var pct = Math.round(p.usage/p.quota*100);
+    $("#proj-overview").innerHTML = '<div class="grid2"><div class="card"><div class="card__head"><h2>概要</h2></div><div class="card__body">'+
+      '<p style="font-size:13px;line-height:1.7;margin:0 0 14px">'+esc(p.desc)+'</p>'+
+      '<div class="kv"><span class="k">所有者</span><span class="v">'+esc(p.owner)+'</span></div>'+
+      '<div class="kv"><span class="k">フォルダ名</span><span class="v mono">'+esc(p.folderName||"—")+'</span></div>'+
+      '<div class="kv"><span class="k">メンバー</span><span class="v num">'+p.members.length+'名</span></div>'+
+      '<div class="kv"><span class="k">作成日</span><span class="v num">'+esc(p.created)+'</span></div>'+
+      '<div class="kv"><span class="k">状態</span><span class="v">'+esc(p.status)+'</span></div>'+
+      '</div></div><div class="card"><div class="card__head"><h2>容量</h2></div><div class="card__body">'+
+      '<div class="meter"><div class="meter__head"><span>Project使用量（上限 '+p.quota+' GB）</span><span class="num">'+p.usage+' GB（'+pct+'%）</span></div><div class="meter__bar"><i class="acc" style="width:'+pct+'%"></i></div></div>'+
+      '</div></div></div>';
+    $("#proj-members").innerHTML = '<div class="card"><div class="table-wrap"><table class="tbl"><thead><tr><th>名前</th><th>利用者ID</th><th>役割</th><th>状態</th><th>追加日</th><th></th></tr></thead><tbody>'+
+      p.members.map(function(m){ return '<tr><td><div class="cell-title">'+esc(m.name)+'</div></td><td class="mono">'+esc(m.id)+'</td><td>'+esc(m.role)+'</td><td>'+userPill(m.status)+'</td><td class="num">'+esc(m.date)+'</td><td style="text-align:right">'+(m.role!=="所有者" ? actions(p.id,[{a:"remove-member",icon:"i-trash",label:"メンバーを削除",danger:true,ref:m.id}]) : '')+'</td></tr>'; }).join('')+
+      '</tbody></table></div></div>';
+    var pfiles = store.files.filter(function(f){return f.scope===p.name;});
+    $("#proj-files").innerHTML = '<div class="card"><div class="table-wrap"><table class="tbl"><thead><tr><th>名前</th><th>種別</th><th>サイズ</th><th>所有者</th><th>更新日時</th><th>状態</th></tr></thead><tbody>'+
+      (pfiles.map(function(f){ return '<tr><td><div class="cell-title">'+esc(f.name)+'</div></td><td>'+esc(f.type)+'</td><td class="num">'+esc(f.size)+'</td><td>'+esc(f.owner)+'</td><td class="num">'+esc(f.updated)+'</td><td>'+filePill(f.status)+'</td></tr>'; }).join('') || '<tr><td colspan="6" class="cell-sub">ファイルがありません。</td></tr>')+
+      '</tbody></table></div></div>';
+    $("#proj-knowledge").innerHTML = '<div class="card"><ul class="rows">'+
+      (p.knowledge.map(function(k){ return '<li class="row"><span class="row__ic"><svg><use href="#i-files"/></svg></span><span class="row__main"><span class="row__title">'+esc(k.title)+'</span><span class="row__meta">'+esc(k.meta)+'</span></span><span class="row__side">'+knowledgePill(k.status)+'</span></li>'; }).join('') || '<li class="row"><span class="row__main"><span class="row__meta">Knowledgeがありません。</span></span></li>')+
+      '</ul></div>';
+    $("#proj-artifacts").innerHTML = '<div class="card"><div class="card__body">'+
+      (p.artifacts.map(function(a){ return '<div class="artifact"><span class="artifact__ic artifact__ic--'+a.icon+'"><svg><use href="#i-file"/></svg></span><div><div class="artifact__name">'+esc(a.name)+'</div><div class="artifact__meta">'+esc(a.meta)+'</div></div><span style="margin-left:auto" class="pill '+(a.status==="採用"?"pill--success":"pill--warn")+'"><span class="dot"></span>'+esc(a.status)+'</span></div>'; }).join('') || '<p class="muted" style="font-size:12.5px;margin:0">Artifactsがありません。</p>')+
+      '</div></div>';
+    showView("project-detail");
+  }
+
+  /* ---------- render: files ---------- */
+  function currentScope(){ var s=$("#file-scope"); var v=s?s.value:""; return v.indexOf("個人")===0 ? "個人" : v; }
+  function renderFiles(){
+    var el = $("#file-tbody"); if(!el) return;
+    var scope = currentScope();
+    var list = store.files.filter(function(f){return f.scope===scope;});
+    el.innerHTML = list.map(function(f){
+      var isFolder = f.kind==="folder";
+      var icon = isFolder ? "i-projects" : "i-file";
+      return '<tr><td><div class="cell-title"><svg style="width:13px;height:13px;margin-right:6px;color:var(--muted);vertical-align:-2px"><use href="#'+icon+'"/></svg>'+esc(f.name)+'</div></td><td>'+esc(isFolder ? "フォルダ" : f.type)+'</td><td class="num">'+esc(isFolder ? "—" : f.size)+'</td><td>'+esc(f.owner)+'</td><td class="num">'+esc(f.updated)+'</td><td>'+filePill(f.status)+'</td><td style="text-align:right">'+actions(f.id,[{a:"download-file",icon:"i-download",label:"ダウンロード"},{a:"rename-file",icon:"i-edit",label:"名前を変更"},{a:"delete-file",icon:"i-trash",label:"削除",danger:true}])+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="cell-sub">ファイルがありません。</td></tr>';
+  }
+
+  /* ---------- render: agents ---------- */
+  var agentFilter = "all";
+  function agentPill(s){
+    var m = { "待機":"pill--muted", "実行中":"pill--running", "完了":"pill--success", "失敗":"pill--danger" };
+    return '<span class="pill '+(m[s]||"pill--muted")+'"><span class="dot"></span>'+esc(s)+'</span>';
+  }
+  function renderAgents(){
+    var el = $("#agent-tbody"); if(!el) return;
+    var list = store.agents.filter(function(a){ return agentFilter==="all" || a.status===agentFilter; });
+    el.innerHTML = list.map(function(a){
+      var acts = [];
+      if(a.status==="実行中") acts.push({a:"stop-agent",icon:"i-x",label:"中止"});
+      else acts.push({a:"run-agent",icon:"i-arrow-r",label:"実行"});
+      acts.push({a:"edit-agent",icon:"i-edit",label:"編集"});
+      acts.push({a:"delete-agent",icon:"i-trash",label:"削除",danger:true});
+      return '<tr data-status="'+a.status+'"><td><div class="cell-title">'+esc(a.name)+'</div></td><td><div class="cell-sub">'+esc(a.desc)+'</div></td><td>'+agentPill(a.status)+'</td><td>'+esc(a.model)+'</td><td class="num">'+a.runs+'回</td><td class="num">'+esc(a.res)+'</td><td class="num">'+esc(a.last)+'</td><td style="text-align:right">'+actions(a.id, acts)+'</td></tr>';
+    }).join('') || '<tr><td colspan="8" class="cell-sub">エージェントがありません。「新しいAgent」から作成してください。</td></tr>';
+    var fr = $("#footer-running"); if(fr){ var running = store.agents.filter(function(a){return a.status==="実行中";}).length; fr.textContent = "実行中 "+running+"件"; }
+    renderAdminAgents();
+  }
+  function renderAdminAgents(){
+    var el = $("#admin-agent-tbody"); if(!el) return;
+    var list = store.agents.slice(0,3);
+    el.innerHTML = list.map(function(a){ return '<tr><td><div class="cell-title">'+esc(a.name)+'</div></td><td><div class="cell-sub">'+esc(a.desc)+'</div></td><td>'+agentPill(a.status)+'</td><td class="num">'+esc(a.last)+'</td><td class="num">'+esc(a.res)+'</td></tr>'; }).join('');
+  }
+
+  /* ---------- render: admin ---------- */
+  function renderAdmin(){
+    var failed = store.agents.filter(function(a){return a.status==="失敗";}).length;
+    var aa = $("#admin-attention");
+    if(aa) aa.innerHTML = '<span><b>ストレージ使用率 70%</b> — <a href="#">拡張計画を開始してください</a></span>'+(failed?'<span><b>失敗したAgent '+failed+'件</b> — <a href="#" data-goto="agents">詳細を確認</a></span>':'');
+    var running = store.agents.filter(function(a){return a.status==="実行中";}).length;
+    var warnCount = failed + 1;
+    var as = $("#admin-stats");
+    if(as) as.innerHTML =
+      '<div class="card stat"><div class="k">実使用可能容量</div><div class="v num">9.1 TiB</div><div class="sub">新規10TB HDD（ext4）</div></div>'+
+      '<div class="card stat stat--accent"><div class="k">使用率</div><div class="v num">12.1%</div><div class="sub">1.10 TiB 使用 / 8.0 TiB 空き</div></div>'+
+      '<div class="card stat"><div class="k">実行中 Agent</div><div class="v num">'+running+'</div><div class="sub">待機 0 · 今日の完了 3</div></div>'+
+      '<div class="card stat stat--warn"><div class="k">対応が必要な警告</div><div class="v num">'+warnCount+'</div><div class="sub">容量 1 · 実行失敗 '+failed+'</div></div>';
+    renderAdminAgents();
+    renderAdminUsers();
+    renderAdminProjects();
+    renderAudit();
+  }
+  function renderAdminUsers(){
+    var el = $("#admin-users-tbody"); if(!el) return;
+    el.innerHTML = store.users.map(function(u){
+      return '<tr><td><div class="cell-title">'+esc(u.name)+'</div><div class="cell-sub mono">'+esc(u.id)+'</div></td><td>'+esc(u.role)+'</td><td class="num">'+esc(u.quota)+'</td><td class="num">'+esc(u.usage)+'</td><td>'+userPill(u.status)+'</td><td class="num">'+esc(u.login)+'</td><td style="text-align:right">'+actions(u.id,[{a:"quota-user",icon:"i-edit",label:"容量変更"},{a:"toggle-user",icon:"i-user",label:"停止/再有効化"},{a:"delete-user",icon:"i-trash",label:"削除",danger:true}])+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="cell-sub">利用者がありません。</td></tr>';
+  }
+  function renderAdminProjects(){
+    var el = $("#admin-projects-tbody"); if(!el) return;
+    el.innerHTML = store.projects.map(function(p){
+      return '<tr><td><div class="cell-title">'+esc(p.name)+'</div></td><td>'+esc(p.owner)+'</td><td class="num">'+p.members.length+'名</td><td class="num">'+p.quota+' GB</td><td class="num">'+p.usage+' GB</td><td>'+projPill(p.status)+'</td><td style="text-align:right">'+actions(p.id,[{a:"edit-project",icon:"i-edit",label:"設定"}])+'</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="cell-sub">Projectがありません。</td></tr>';
+  }
+  function renderAudit(){
+    var el = $("#audit-tbody"); if(!el) return;
+    var cat = $("#audit-action").value, res = $("#audit-result").value;
+    var list = store.audit.filter(function(a){
+      return (cat==="all" || a.cat===cat) && (res==="all" || a.r===res);
+    });
+    el.innerHTML = list.map(function(a){
+      return '<tr><td class="num">'+esc(a.t)+'</td><td class="mono">'+esc(a.u)+'</td><td>'+esc(a.a)+'</td><td class="mono">'+esc(a.o)+'</td><td>'+resultPill(a.r)+'</td><td class="mono">'+esc(a.ip)+'</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="cell-sub">該当する監査ログがありません。</td></tr>';
+  }
+
+  /* ---------- CRUD ---------- */
+  function newChat(){
+    var c = { id:uid("c"), title:"新しい会話", project:"経費精算", time:"たった今", last:"", messages:[] };
+    store.conversations.unshift(c);
+    saveStore(); renderChatList(); renderHome();
+    openChat(c.id);
+    toast("新しい会話を作成しました。");
+  }
+  function renameChat(id){
+    var c = findById(store.conversations, id || currentChatId); if(!c) return;
+    openFormModal({title:"会話の題名を変更", fields:[{name:"title",label:"題名",value:c.title}], onSave:function(d){
+      if(!d.title) return; c.title=d.title; saveStore(); renderChatList(); renderHome();
+      if(currentChatId===c.id) $("#chat-title").textContent = c.title;
+      toast("題名を変更しました。");
+    }});
+  }
+  function deleteChat(id){
+    var c = findById(store.conversations, id || currentChatId); if(!c) return;
+    confirmDialog("会話を削除","「"+c.title+"」を削除します。この操作は取り消せません。", function(){
+      store.conversations = store.conversations.filter(function(x){return x.id!==c.id;});
+      saveStore(); renderChatList(); renderHome();
+      if(currentChatId===c.id){ currentChatId=null; showView("chat-list"); }
+      toast("会話を削除しました。");
+    });
+  }
+  function newWork(){
+    openFormModal({title:"新しいWork", fields:[{name:"goal",label:"Goal（達成したいこと）",type:"textarea",value:""}], onSave:function(d){
+      if(!d.goal){ toast("Goalを入力してください。"); return; }
+      var w = { id:uid("w"), title:shortGoal(d.goal), project:store.currentProject, status:"awaiting_review", started:nowStamp(), updated:nowStamp(), goal:d.goal, plan:["要件の確認と入力整理","Planの生成と承認","タスクの実行","成果物の生成と保存"] };
+      store.works.unshift(w);
+      saveStore(); renderWorkList(); renderHome();
+      openWork(w.id);
+      toast("Workを作成しました。計画を確認してください。");
+    }});
+  }
+  function editWork(id){
+    var w = findById(store.works, id || currentWorkId); if(!w) return;
+    openFormModal({title:"Goalを編集", fields:[{name:"goal",label:"Goal",type:"textarea",value:w.goal}], onSave:function(d){
+      if(!d.goal) return; w.goal=d.goal; w.updated=nowStamp(); saveStore(); renderWorkList(); renderHome();
+      if(currentWorkId===w.id) openWork(w.id);
+      toast("Goalを更新しました。");
+    }});
+  }
+  function deleteWork(id){
+    var w = findById(store.works, id || currentWorkId); if(!w) return;
+    confirmDialog("Workを削除","「"+w.title+"」を削除します。", function(){
+      store.works = store.works.filter(function(x){return x.id!==w.id;});
+      saveStore(); renderWorkList(); renderHome();
+      if(currentWorkId===w.id){ currentWorkId=null; showView("work-list"); }
+      toast("Workを削除しました。");
+    });
+  }
+  function newProject(){
+    openFormModal({title:"新しいProject", fields:[
+      {name:"name",label:"Project名（日本語）",value:""},
+      {name:"folderName",label:"フォルダ名（英語・半角英数字）",value:""},
+      {name:"desc",label:"説明",value:""},
+      {name:"quota",label:"Quota（GB）",value:"100"}
+    ], onSave:function(d){
+      if(!d.name){ toast("Project名（日本語）を入力してください。"); return; }
+      if(!/^[a-zA-Z0-9_-]+$/.test(d.folderName||"")){ toast("フォルダ名は半角英数字・_・-で入力してください。"); return; }
+      var p = { id:uid("p"), name:d.name, folderName:d.folderName, desc:d.desc||"", owner:"佐藤 直樹", ownerId:"naoki.sato", usage:0, quota:parseInt(d.quota,10)||100, status:"進行中", created:nowDate(), updated:nowStamp(), filter:"active owner", members:[{name:"佐藤 直樹", id:"naoki.sato", role:"所有者", status:"有効", date:nowDate()}], knowledge:[], artifacts:[] };
+      store.projects.unshift(p);
+      saveStore(); renderProjects(); renderAdminProjects();
+      toast("Projectを作成しました。");
+    }});
+  }
+  function editProject(id){
+    var p = findById(store.projects, id); if(!p) return;
+    openFormModal({title:"Projectを編集", fields:[{name:"name",label:"Project名（日本語）",value:p.name},{name:"folderName",label:"フォルダ名（英語）",value:p.folderName||""},{name:"desc",label:"説明",value:p.desc},{name:"quota",label:"Quota（GB）",value:String(p.quota)}], onSave:function(d){
+      if(!d.name) return;
+      if(d.folderName && !/^[a-zA-Z0-9_-]+$/.test(d.folderName)){ toast("フォルダ名は半角英数字・_・-で入力してください。"); return; }
+      p.name=d.name; p.folderName=d.folderName||p.folderName; p.desc=d.desc||""; p.quota=parseInt(d.quota,10)||p.quota; p.updated=nowStamp();
+      saveStore(); renderProjects(); renderAdminProjects();
+      if(currentProjectId===p.id) openProject(p.id);
+      toast("Projectを更新しました。");
+    }});
+  }
+  function deleteProject(id){
+    var p = findById(store.projects, id); if(!p) return;
+    confirmDialog("Projectを削除","「"+p.name+"」を削除します。関連データへの影響を確認してください。", function(){
+      store.projects = store.projects.filter(function(x){return x.id!==p.id;});
+      saveStore(); renderProjects(); renderAdminProjects();
+      if(currentProjectId===p.id){ currentProjectId=null; showView("projects"); }
+      toast("Projectを削除しました。");
+    });
+  }
+  function addMember(){
+    var p = findById(store.projects, currentProjectId); if(!p) return;
+    openFormModal({title:"メンバーを追加", fields:[
+      {name:"name",label:"名前",value:""},{name:"id",label:"利用者ID",value:""},{name:"role",label:"役割",type:"select",options:["メンバー","閲覧者"],value:"メンバー"}
+    ], onSave:function(d){
+      if(!d.name || !d.id){ toast("名前と利用者IDを入力してください。"); return; }
+      p.members.push({name:d.name, id:d.id, role:d.role, status:"有効", date:nowDate()});
+      saveStore(); renderProjects(); renderAdminProjects(); openProject(p.id);
+      toast("メンバーを追加しました。");
+    }});
+  }
+  function removeMember(pid, mid){
+    var p = findById(store.projects, pid); if(!p) return;
+    var m = p.members.filter(function(x){return x.id===mid;})[0];
+    confirmDialog("メンバーを削除", (m?m.name:mid)+" をプロジェクトから削除します。", function(){
+      p.members = p.members.filter(function(x){return x.id!==mid;});
+      saveStore(); renderProjects(); renderAdminProjects(); openProject(p.id);
+      toast("メンバーを削除しました。");
+    });
+  }
+  function newFile(){ var fi = $("#file-input"); if(fi) fi.click(); }
+  function uploadFiles(fileList){
+    Array.prototype.forEach.call(fileList||[], function(f){
+      var entry = { id:uid("f"), name:f.name, type:detectType(f.name, f.type), size:fmtSize(f.size), owner:"佐藤 直樹", updated:nowStamp(), status:"アップロード中", scope:currentScope(), kind:"file" };
+      store.files.unshift(entry); saveStore(); renderFiles();
+      toast(f.name+" のアップロードを開始しました。");
+      (function(en){ setTimeout(function(){ en.status="利用可能"; saveStore(); renderFiles(); toast(en.name+" のアップロードが完了しました。"); }, 1200); })(entry);
+    });
+  }
+  function renameFile(id){
+    var f = findById(store.files, id); if(!f) return;
+    openFormModal({title:"ファイル名を変更", fields:[{name:"name",label:"ファイル名",value:f.name}], onSave:function(d){
+      if(!d.name) return; f.name=d.name; f.updated=nowStamp(); saveStore(); renderFiles();
+      toast("名前を変更しました。");
+    }});
+  }
+  function deleteFile(id){
+    var f = findById(store.files, id); if(!f) return;
+    confirmDialog("ファイルを削除","「"+f.name+"」を削除します。", function(){
+      store.files = store.files.filter(function(x){return x.id!==f.id;});
+      saveStore(); renderFiles();
+      toast("ファイルを削除しました。");
+    });
+  }
+  function demoFileContent(f){
+    if(f.type === "CSV") return "項目1,項目2,項目3\nサンプル,データ,1\n";
+    return "Mirai AI Work Platform デモファイル\n\nファイル名: "+f.name+"\n種別: "+f.type+"\nサイズ: "+(f.size||"—")+"\n所有者: "+(f.owner||"—")+"\n更新日時: "+(f.updated||"—")+"\n\n※ これはプレビュー用に生成されたサンプル内容です。";
+  }
+  function saveAsFile(filename, text, mime){
+    var blob = new Blob([text], { type: mime });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 500);
+  }
+  function downloadFile(id){
+    var f = findById(store.files, id); if(!f) return;
+    if(f.kind === "folder"){ toast("フォルダはダウンロードできません。"); return; }
+    if(f.status === "アップロード中"){ toast("アップロード中のため、まだダウンロードできません。"); return; }
+    var isCsv = f.type === "CSV";
+    saveAsFile(f.name, (isCsv ? "\uFEFF" : "") + demoFileContent(f), isCsv ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8");
+    toast(f.name+" をダウンロードしました（デモ用のサンプル内容）。");
+  }
+  function newFolder(){
+    openFormModal({title:"新規フォルダ", fields:[{name:"name",label:"フォルダ名（日本語）",value:""}], onSave:function(d){
+      if(!d.name){ toast("フォルダ名を入力してください。"); return; }
+      store.files.unshift({ id:uid("f"), name:d.name, type:"フォルダ", size:"—", owner:"佐藤 直樹", updated:nowStamp(), status:"利用可能", scope:currentScope(), kind:"folder" });
+      saveStore(); renderFiles();
+      toast("フォルダ「"+d.name+"」を作成しました。");
+    }});
+  }
+  function newAgent(){
+    openFormModal({title:"新しいAgent", fields:[
+      {name:"name",label:"エージェント名",value:""},
+      {name:"desc",label:"目的・説明（Goal）",type:"textarea",value:""}
+    ], onSave:function(d){
+      if(!d.name){ toast("エージェント名を入力してください。"); return; }
+      store.agents.unshift({ id:uid("a"), name:d.name, desc:d.desc||"", status:"待機", model:"deepseek-chat", runs:0, res:"—", last:"—", owner:"naoki.sato" });
+      saveStore(); renderAgents(); renderAdmin();
+      toast("エージェントを作成しました。");
+    }});
+  }
+  function editAgent(id){
+    var a = findById(store.agents, id); if(!a) return;
+    openFormModal({title:"エージェントを編集", fields:[{name:"name",label:"エージェント名",value:a.name},{name:"desc",label:"目的・説明",type:"textarea",value:a.desc}], onSave:function(d){
+      if(!d.name) return; a.name=d.name; a.desc=d.desc||""; saveStore(); renderAgents(); renderAdmin();
+      toast("エージェントを更新しました。");
+    }});
+  }
+  function deleteAgent(id){
+    var a = findById(store.agents, id); if(!a) return;
+    confirmDialog("エージェントを削除","「"+a.name+"」を削除します。", function(){
+      store.agents = store.agents.filter(function(x){return x.id!==a.id;});
+      saveStore(); renderAgents(); renderAdmin();
+      toast("エージェントを削除しました。");
+    });
+  }
+  function runAgent(id){
+    var a = findById(store.agents, id); if(!a) return;
+    a.status="実行中"; a.res="40% / 1.2 GB"; a.last=nowStamp(); saveStore(); renderAgents(); renderAdmin();
+    toast(a.name+" を実行しています。");
+    setTimeout(function(){
+      a.status="完了"; a.res="12% / 0.8 GB"; a.runs=(a.runs||0)+1; a.last=nowStamp(); saveStore(); renderAgents(); renderAdmin();
+      toast(a.name+" の実行が完了しました。");
+    }, 2000);
+  }
+  function stopAgent(id){
+    var a = findById(store.agents, id); if(!a) return;
+    a.status="待機"; a.res="—"; saveStore(); renderAgents(); renderAdmin();
+    toast(a.name+" を中止しました。");
+  }
+  function newUser(){
+    openFormModal({title:"利用者を追加", fields:[
+      {name:"id",label:"利用者ID",value:""},{name:"name",label:"表示名",value:""},{name:"role",label:"役割",type:"select",options:["利用者","プロジェクト所有者","IT・DX管理者"],value:"利用者"},{name:"quota",label:"Quota（GB）",value:"100"}
+    ], onSave:function(d){
+      if(!d.id || !d.name){ toast("利用者IDと表示名を入力してください。"); return; }
+      store.users.push({id:d.id, name:d.name, role:d.role, quota:(parseInt(d.quota,10)||100)+" GB", usage:"0 GB", status:"有効", login:"—"});
+      saveStore(); renderAdminUsers(); renderAdmin();
+      toast("利用者を追加しました。");
+    }});
+  }
+  function quotaUser(id){
+    var u = findById(store.users, id); if(!u) return;
+    var cur = parseInt(u.quota,10)||100;
+    openFormModal({title:"容量上限を変更", fields:[{name:"quota",label:"Quota（GB）",value:String(cur)}], onSave:function(d){
+      u.quota = (parseInt(d.quota,10)||cur)+" GB"; saveStore(); renderAdminUsers();
+      toast(u.name+" の容量上限を変更しました。");
+    }});
+  }
+  function toggleUser(id){
+    var u = findById(store.users, id); if(!u) return;
+    u.status = u.status==="停止" ? "有効" : "停止";
+    saveStore(); renderAdminUsers();
+    toast(u.name+" を"+(u.status==="停止"?"停止":"再有効化")+"しました。");
+  }
+  function deleteUser(id){
+    var u = findById(store.users, id); if(!u) return;
+    confirmDialog("利用者を削除","「"+u.name+"」を削除します。", function(){
+      store.users = store.users.filter(function(x){return x.id!==u.id;});
+      saveStore(); renderAdminUsers(); renderAdmin();
+      toast("利用者を削除しました。");
+    });
+  }
+  function exportAudit(){
+    var cat = $("#audit-action").value, res = $("#audit-result").value;
+    var list = store.audit.filter(function(a){
+      return (cat==="all" || a.cat===cat) && (res==="all" || a.r===res);
+    });
+    var rows = [["日時","利用者","アクション","対象","結果","IPアドレス"]];
+    list.forEach(function(a){ rows.push([a.t, a.u, a.a, a.o, a.r, a.ip]); });
+    var csv = rows.map(function(r){
+      return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\r\n");
+    var d = new Date();
+    var stamp = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"_"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");
+    saveAsFile("audit_log_"+stamp+".csv", "\uFEFF"+csv, "text/csv;charset=utf-8");
+    toast("監査ログをCSVに出力しました（"+list.length+"件）。");
+  }
+
+  function handleAction(el){
+    var action = el.getAttribute("data-action");
+    var id = el.getAttribute("data-id");
+    var ref = el.getAttribute("data-ref");
+    switch(action){
+      case "new-chat": newChat(); break;
+      case "rename-chat": renameChat(id); break;
+      case "delete-chat": deleteChat(id); break;
+      case "new-work": newWork(); break;
+      case "edit-work": editWork(id); break;
+      case "delete-work": deleteWork(id); break;
+      case "new-project": newProject(); break;
+      case "edit-project": editProject(id); break;
+      case "delete-project": deleteProject(id); break;
+      case "add-member": addMember(); break;
+      case "remove-member": removeMember(id, ref); break;
+      case "new-file": newFile(); break;
+      case "rename-file": renameFile(id); break;
+      case "delete-file": deleteFile(id); break;
+      case "new-folder": newFolder(); break;
+      case "download-file": downloadFile(id); break;
+      case "new-agent": newAgent(); break;
+      case "edit-agent": editAgent(id); break;
+      case "delete-agent": deleteAgent(id); break;
+      case "run-agent": runAgent(id); break;
+      case "stop-agent": stopAgent(id); break;
+      case "new-user": newUser(); break;
+      case "quota-user": quotaUser(id); break;
+      case "toggle-user": toggleUser(id); break;
+      case "delete-user": deleteUser(id); break;
+      case "export-audit": exportAudit(); break;
+    }
+  }
+
+  /* ---------- modal ---------- */
+  function openFormModal(o){
+    $("#modal-body").innerHTML = o.fields.map(function(f){
+      var c;
+      if(f.type==="textarea") c = '<textarea class="input" name="'+f.name+'" rows="4">'+esc(f.value||"")+'</textarea>';
+      else if(f.type==="select") c = '<select class="select" name="'+f.name+'" style="width:100%">'+(f.options||[]).map(function(opt){return '<option'+(opt===f.value?' selected':'')+'>'+esc(opt)+'</option>';}).join('')+'</select>';
+      else c = '<input class="input" name="'+f.name+'" value="'+esc(f.value||"")+'">';
+      return '<div class="field"><label>'+esc(f.label)+'</label>'+c+'</div>';
+    }).join('');
+    $("#modal-title").textContent = o.title;
+    $("#modal").removeAttribute("hidden");
+    var save = $("#modal-save");
+    var handler = function(){
+      var data = {};
+      o.fields.forEach(function(f){ var el = $("#modal-body").querySelector('[name="'+f.name+'"]'); data[f.name] = el ? el.value : ""; });
+      $("#modal").setAttribute("hidden","");
+      save.removeEventListener("click", handler);
+      o.onSave(data);
+    };
+    save.addEventListener("click", handler);
+    setTimeout(function(){ var f=$("#modal-body").querySelector("input,textarea,select"); if(f) f.focus(); },0);
+  }
+  function confirmDialog(title, body, onOk){
+    $("#confirm-title").textContent = title;
+    $("#confirm-body").textContent = body;
+    $("#confirm").removeAttribute("hidden");
+    var ok = $("#confirm-ok");
+    var handler = function(){ $("#confirm").setAttribute("hidden",""); ok.removeEventListener("click", handler); onOk(); };
+    ok.addEventListener("click", handler);
+  }
+  function closeModals(){ $("#modal").setAttribute("hidden",""); $("#confirm").setAttribute("hidden",""); }
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg){
+    var t = $("#toast"); if(!t) return;
+    $("#toast-text").textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------- dropdowns ---------- */
+  function closeDropdowns(){ $all(".dropdown").forEach(function(d){ d.classList.remove("open"); }); }
+  function toggleDropdown(dd){ var o = dd.classList.contains("open"); closeDropdowns(); if(!o) dd.classList.add("open"); }
+  var ddNotif = $("#dd-notif"), ddUser = $("#dd-user");
+  if(ddNotif) $("#btn-notif").addEventListener("click", function(e){ e.stopPropagation(); toggleDropdown(ddNotif); });
+  if(ddUser) $("#btn-user").addEventListener("click", function(e){ e.stopPropagation(); toggleDropdown(ddUser); });
+  document.addEventListener("click", function(e){ if(!e.target.closest(".dropdown")) closeDropdowns(); });
+
+  /* ---------- delegation ---------- */
+  document.addEventListener("click", function(e){
+    var act = e.target.closest("[data-action]");
+    if(act){ e.preventDefault(); e.stopPropagation(); handleAction(act); return; }
+    var nav = e.target.closest("[data-nav]");
+    if(nav){ e.preventDefault(); showView(nav.getAttribute("data-nav")); return; }
+    var go = e.target.closest("[data-goto]");
+    if(go){
+      e.preventDefault();
+      var t = go.getAttribute("data-goto");
+      if(t==="work-detail"){ openWork(go.getAttribute("data-work") || currentWorkId || "w1"); }
+      else if(t==="project-detail"){ openProject(go.getAttribute("data-project") || currentProjectId || "p1"); }
+      else if(t==="chat-detail"){ openChat(go.getAttribute("data-chat") || currentChatId); }
+      else { showView(t); }
+      return;
+    }
+    var w = e.target.closest("[data-work]");
+    if(w){ e.preventDefault(); openWork(w.getAttribute("data-work")); return; }
+    var p = e.target.closest("[data-project]");
+    if(p){ e.preventDefault(); openProject(p.getAttribute("data-project")); return; }
+    var c = e.target.closest("[data-chat]");
+    if(c){ e.preventDefault(); openChat(c.getAttribute("data-chat")); return; }
+  });
+
+  /* ---------- modal close ---------- */
+  $("#modal-close").addEventListener("click", closeModals);
+  $("#modal-cancel").addEventListener("click", closeModals);
+  $("#confirm-cancel").addEventListener("click", closeModals);
+  $("#modal").addEventListener("click", function(e){ if(e.target===this) closeModals(); });
+  $("#confirm").addEventListener("click", function(e){ if(e.target===this) closeModals(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeModals(); });
+
+  /* ---------- login ---------- */
+  function enterApp(){
+    $("#login-view").style.display = "none";
+    $("#app-shell").style.display = "grid";
+    try{ localStorage.setItem("mirai.loggedIn","1"); }catch(e){}
+    var saved=null; try{ saved=localStorage.getItem("mirai.view"); }catch(e){}
+    navigateTo(saved && VIEWS.indexOf(saved)>-1 ? saved : "home");
+    toast("サインインしました");
+  }
+  function leaveApp(){
+    $("#app-shell").style.display = "none";
+    $("#login-view").style.display = "flex";
+    try{ localStorage.removeItem("mirai.loggedIn"); }catch(e){}
+  }
+  $("#login-btn").addEventListener("click", function(){
+    var id = $("#login-id").value.trim(), pw = $("#login-pw").value;
+    if(id && pw){ enterApp(); } else { $("#login-error").style.display = "flex"; }
+  });
+  $("#login-pw").addEventListener("keydown", function(e){ if(e.key==="Enter") $("#login-btn").click(); });
+  $("#logout-btn").addEventListener("click", function(){ leaveApp(); });
+
+  /* ---------- chat send ---------- */
+  $("#chat-send").addEventListener("click", function(){ sendChat(); });
+  $("#chat-input").addEventListener("keydown", function(e){ if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){ e.preventDefault(); sendChat(); } });
+
+  /* ---------- work primary action ---------- */
+  $("#work-primary-action").addEventListener("click", function(){
+    var w = findById(store.works, currentWorkId); if(!w) return;
+    if(w.status==="awaiting_review"){
+      w.status="running"; w.updated=nowStamp(); saveStore(); openWork(w.id);
+      toast("計画を承認しました。実行を開始します。"); runSimulation(w.id);
+    } else if(w.status==="running"){
+      w.status="cancelled"; w.updated=nowStamp(); saveStore(); openWork(w.id); renderWorkList(); renderHome();
+      toast("実行を中止しました。");
+    } else {
+      w.status="running"; w.updated=nowStamp(); saveStore(); openWork(w.id);
+      toast("再実行を開始します。"); runSimulation(w.id);
+    }
+  });
+  $("#review-adopt").addEventListener("click", function(){ var w=findById(store.works,currentWorkId); if(w) toast("成果物を採用として記録しました。"); });
+  $("#review-rerun").addEventListener("click", function(){ var w=findById(store.works,currentWorkId); if(w){ w.status="running"; w.updated=nowStamp(); saveStore(); openWork(w.id); runSimulation(w.id); toast("再実行を開始します。"); } });
+
+  /* ---------- filters ---------- */
+  $("#work-filters").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip"); if(!chip) return;
+    $all("#work-filters .chip").forEach(function(c){c.classList.remove("active");});
+    chip.classList.add("active"); workFilter = chip.getAttribute("data-filter"); renderWorkList();
+  });
+  $("#project-filters").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip"); if(!chip) return;
+    $all("#project-filters .chip").forEach(function(c){c.classList.remove("active");});
+    chip.classList.add("active"); projectFilter = chip.getAttribute("data-filter"); renderProjects();
+  });
+  $("#agent-filters").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip"); if(!chip) return;
+    $all("#agent-filters .chip").forEach(function(c){c.classList.remove("active");});
+    chip.classList.add("active"); agentFilter = chip.getAttribute("data-filter"); renderAgents();
+  });
+  var fileScope = $("#file-scope");
+  if(fileScope) fileScope.addEventListener("change", function(){ var cur=$("#file-crumbs .cur"); if(cur) cur.textContent = fileScope.value; renderFiles(); });
+  var auditAction = $("#audit-action"), auditResult = $("#audit-result");
+  if(auditAction) auditAction.addEventListener("change", renderAudit);
+  if(auditResult) auditResult.addEventListener("change", renderAudit);
+
+  /* ---------- tabs ---------- */
+  function wireTabs(attr, panelAttr){
+    $all("["+attr+"]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var section = btn.closest("section");
+        Array.prototype.forEach.call(section.querySelectorAll("["+attr+"]"), function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        var name = btn.getAttribute(attr);
+        Array.prototype.forEach.call(section.querySelectorAll("["+panelAttr+"]"), function(p){ p.classList.remove("active"); });
+        var target = section.querySelector("["+panelAttr+'="'+name+'"]');
+        if(target) target.classList.add("active");
+      });
+    });
+  }
+  wireTabs("data-atab", "data-apanel");
+  wireTabs("data-ptab", "data-ppanel");
+
+  /* ---------- project context ---------- */
+  var ctxProj = $("#ctx-project");
+  if(ctxProj){ ctxProj.value = store.currentProject; ctxProj.addEventListener("change", function(){ store.currentProject = ctxProj.value; saveStore(); }); }
+
+  /* ---------- file upload (real file input) ---------- */
+  var fileInput = $("#file-input");
+  if(fileInput){
+    fileInput.addEventListener("change", function(e){
+      uploadFiles(e.target.files);
+      e.target.value = "";
+    });
+  }
+
+  /* ---------- AI API key management (DeepSeek) ---------- */
+  var AIKEY_STORAGE = "mirai.apiKey";
+  function loadApiKey(){ try{ return localStorage.getItem(AIKEY_STORAGE)||""; }catch(e){ return ""; } }
+  function saveApiKey(k){ try{ localStorage.setItem(AIKEY_STORAGE, k); }catch(e){} }
+  function clearApiKey(){ try{ localStorage.removeItem(AIKEY_STORAGE); }catch(e){} }
+  function updateKeyState(){
+    var hint = $("#ai-key-state");
+    if(hint) hint.textContent = loadApiKey() ? "保存状態: 設定済み" : "保存状態: 未設定";
+  }
+  var aiKeyInput = $("#ai-apikey");
+  if(aiKeyInput){
+    aiKeyInput.value = loadApiKey();
+    updateKeyState();
+    $("#ai-apikey-toggle").addEventListener("click", function(){
+      var show = aiKeyInput.type === "password";
+      aiKeyInput.type = show ? "text" : "password";
+      this.setAttribute("aria-label", show ? "APIキーを非表示" : "APIキーを表示");
+    });
+    $("#ai-key-test").addEventListener("click", function(){
+      var btn = this, key = aiKeyInput.value.trim();
+      if(!key){ toast("APIキーを入力してください。"); return; }
+      btn.disabled = true; btn.textContent = "テスト中…";
+      var conn = $("#ai-conn");
+      fetch("https://api.deepseek.com/models", { headers: { "Authorization": "Bearer " + key } })
+        .then(function(res){
+          btn.disabled = false; btn.textContent = "テスト接続";
+          if(res.status === 200){
+            if(conn){ conn.querySelector(".dot").style.background = "var(--success)"; conn.childNodes[1].textContent = "正常"; }
+            toast("接続テスト成功: DeepSeek API に接続できました。");
+          } else if(res.status === 401){
+            if(conn){ conn.querySelector(".dot").style.background = "var(--danger)"; conn.childNodes[1].textContent = "認証エラー"; }
+            toast("接続テスト失敗: APIキーが無効です（HTTP 401）。");
+          } else {
+            if(conn){ conn.querySelector(".dot").style.background = "var(--warning)"; conn.childNodes[1].textContent = "異常"; }
+            toast("接続テスト失敗: HTTP "+res.status+" が返されました。");
+          }
+        })
+        .catch(function(){
+          btn.disabled = false; btn.textContent = "テスト接続";
+          if(conn){ conn.querySelector(".dot").style.background = "var(--warning)"; conn.childNodes[1].textContent = "未接続"; }
+          toast("接続テスト失敗: ネットワークに到達できません（プレビュー環境やオフラインでは接続できない場合があります）。");
+        });
+    });
+    $("#ai-key-save").addEventListener("click", function(){
+      var key = aiKeyInput.value.trim();
+      if(!key){ toast("APIキーを入力してください。"); return; }
+      saveApiKey(key); updateKeyState();
+      toast("APIキーを保存しました（Secret 管理基盤）。");
+    });
+    $("#ai-key-clear").addEventListener("click", function(){
+      aiKeyInput.value = ""; aiKeyInput.type = "password";
+      clearApiKey(); updateKeyState();
+      toast("APIキーをクリアしました。");
+    });
+  }
+
+  /* ---------- render all + boot ---------- */
+  function renderAll(){
+    renderHome(); renderChatList(); renderWorkList(); renderProjects(); renderFiles(); renderAgents(); renderAdmin();
+  }
+  var loggedIn = false;
+  try{ loggedIn = localStorage.getItem("mirai.loggedIn")==="1"; }catch(e){}
+  renderAll();
+  if(loggedIn){
+    $("#login-view").style.display = "none";
+    $("#app-shell").style.display = "grid";
+    var saved=null; try{ saved=localStorage.getItem("mirai.view"); }catch(e){}
+    navigateTo(saved && VIEWS.indexOf(saved)>-1 ? saved : "home");
+  } else {
+    showView("home");
+  }
+})();
+
+</script>
+</body>
+</html>

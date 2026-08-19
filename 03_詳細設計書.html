@@ -1,0 +1,88 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>Mirai AI ワークプラットフォーム 詳細設計書</title><style>body{font-family:Arial,'Noto Sans JP',sans-serif;line-height:1.75;margin:40px;color:#222}h1,h2,h3{color:#183b56}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #bbb;padding:8px;vertical-align:top}th{background:#eef3f7}pre,code{background:#f6f6f6}pre{padding:12px;overflow:auto}</style></head><body>
+<h1>Mirai AI ワークプラットフォーム 詳細設計書</h1>
+<p><strong>Repository：</strong><code>Mirai-AI-Work-Platform</code></p>
+<h2>1. システム構成</h2><pre>Client Browser
+   ↓ HTTPS
+Web Frontend
+   ↓
+Application API
+   ├─ Auth/Session
+   ├─ Project Service
+   ├─ File Service
+   ├─ Work/Agent Service
+   ├─ Storage Service
+   └─ Audit Service
+        ↓
+DeepSeek API
+        ↓
+Agent Sandbox Container
+        ↓ bind mount
+/mnt/storage/.../workspace
+
+Storage:
+新規10TB外付けHDD 1台（ext4）
+      ↓ UUID指定で直接mount
+/mnt/storage
+</pre>
+<h2>2. Linuxストレージ設計</h2><h3>2.1 Mount</h3><pre>新規10TB外付けHDD（公称10TB≒約9.1TiB、GPT / ext4）
+  ↓ UUID指定
+/mnt/storage</pre><p>新規10TB HDDはUUID指定で<code>/etc/fstab</code>に登録し、デバイス名変動の影響を避ける。10TBはメーカー公称容量であり、Linux上の表示容量とext4フォーマット後の実使用可能容量が小さくなることを前提とする。既存4TB HDDはこのマウント構成へ含めない。</p>
+<h3>2.2 マウント安全設計</h3><p>アプリケーションは必ず<code>/mnt/storage</code>のみを参照する。systemdサービスに<code>RequiresMountsFor=/mnt/storage</code>相当の依存関係を設定し、起動時にmountpoint、期待するUUID、書込み可否を検証する。HDDの未接続、切断、read-only化、I/Oエラーを検知した場合は新規UploadとArtifact生成を停止し、OSルートファイルシステム上の同名ディレクトリへ誤書込みしない。</p>
+<h3>2.3 ディレクトリ</h3><pre>/mnt/storage/
+├── users/{user_uuid}/
+│   ├── workspace/
+│   ├── uploads/
+│   ├── artifacts/
+│   └── temp/
+├── projects/{project_uuid}/
+│   ├── files/
+│   ├── workspace/
+│   ├── artifacts/
+│   ├── knowledge/
+│   └── git/
+├── company-knowledge/
+├── runtime/
+│   ├── sessions/
+│   ├── jobs/
+│   └── sandboxes/
+├── cache/
+├── archive/
+└── system/
+</pre><p><code>/mnt/storage</code>の親ディレクトリはroot管理とし、配下はアプリケーション専用ユーザー／グループへ必要最小限の権限を付与する。world-writableを禁止し、ext4の<code>lost+found</code>はアプリケーションの走査対象外とする。</p>
+<h3>2.4 既存データの条件付き移行</h3><p>既存4TB HDDに移行対象データがある場合は、10TB HDDへの初回コピー後に書込みサービスを停止して最終差分を同期し、ファイル件数、総バイト数、チェックサムを照合する。照合とアプリケーション受入試験が完了するまで既存HDDを消去・再利用せず、読み取り専用のロールバック元として保管する。既存データがない場合、この移行工程は実施しない。</p>
+<h2>3. アプリケーション構成</h2><table><tr><th>モジュール</th><th>責務</th></tr><tr><td>Frontend</td><td>Chat、Work、Projects、Files、Agents、Admin画面</td></tr><tr><td>API Gateway</td><td>認証、Rate Limit、Request ID、API routing</td></tr><tr><td>Project Service</td><td>Project、Member、Role、Quota</td></tr><tr><td>File Service</td><td>Upload/Download/Move/Delete、Metadata、Scan hook</td></tr><tr><td>Agent Service</td><td>Plan、Job、Sandbox起動、Tool実行、状態管理</td></tr><tr><td>Storage Service</td><td>使用量計算、Quota判定、<code>/mnt/storage</code>の使用率・マウント・I/O状態監視</td></tr><tr><td>Audit Service</td><td>イベント記録・検索</td></tr></table>
+<h2>4. データモデル</h2><table><tr><th>Table</th><th>主な項目</th></tr><tr><td>users</td><td>id, login_id, display_name, role, storage_quota_bytes, status</td></tr><tr><td>projects</td><td>id, name, owner_id, storage_quota_bytes, status</td></tr><tr><td>project_members</td><td>project_id, user_id, role</td></tr><tr><td>files</td><td>id, owner_type, owner_id, relative_path, size_bytes, mime_type, checksum</td></tr><tr><td>conversations</td><td>id, user_id, project_id, title</td></tr><tr><td>messages</td><td>id, conversation_id, role, content, model, token_usage</td></tr><tr><td>agent_runs</td><td>id, user_id, project_id, goal, status, started_at, finished_at</td></tr><tr><td>tasks</td><td>id, agent_run_id, title, status, sequence</td></tr><tr><td>artifacts</td><td>id, agent_run_id, file_id, artifact_type</td></tr><tr><td>audit_logs</td><td>id, user_id, action, resource_type, resource_id, result, ip, created_at</td></tr></table>
+<h2>5. Quota設計</h2><p>Quotaはアプリケーション層で管理し、保存前に現在使用量 + 新規サイズが上限を超えないことを確認する。Pilot初期値は100GB/Userを候補とし、Projectは50/100/500GB等を管理者が設定可能とする。UserとProjectの容量集計ルールを一意に定め、ファイルシステム全体の空き容量10%を運用予備として確保する。全体保護制限は個別Quotaより優先する。</p><pre>if current_usage + incoming_size > hard_quota:
+    reject upload/job output
+elif usage_ratio >= 0.8:
+    warn user/admin
+</pre>
+<h2>6. Agent Sandbox設計</h2><ul><li>Agent実行ごとに一時Containerを起動。</li><li>対象User/ProjectのWorkspaceのみ<code>/workspace</code>へbind mount。</li><li><code>/mnt/storage</code>全体はContainerへ公開しない。</li><li>Network、Shell、File Toolの権限をProfile化。</li><li>実行時間、CPU、Memory、出力サイズに上限を設ける。</li></ul>
+<h2>7. DeepSeek API設計</h2><ul><li>Provider層を抽象化し、将来他LLMを追加可能にする。</li><li>System Prompt、Project Context、User Requestを分離。</li><li>Tool Call結果は検証後にLLMへ返却。</li><li>API KeyはSecretとして保存し、DBやソースに平文保存しない。</li><li>利用量・モデル・Token等をagent_runs/messagesへ記録。</li></ul>
+<h2>8. Work実行フロー</h2><pre>Goal入力
+ ↓
+Validation
+ ↓
+Plan生成
+ ↓
+Task分解
+ ↓
+Sandbox作成
+ ↓
+Tool実行
+ ↓
+Artifact生成
+ ↓
+Review
+ ↓
+Completed / Failed
+ ↓
+Audit & Usage Update</pre>
+<h2>9. ファイル安全設計</h2><ul><li>relative pathのみDB保存し、絶対パスの直接入力を禁止。</li><li><code>..</code>、symlink escape、Path Traversalを拒否。</li><li>許可拡張子/MIME、最大ファイルサイズを設定。</li><li>アップロード名と保存名を分離しUUID等で保存可能にする。</li><li>Checksumを保持して重複・破損確認に利用。</li></ul>
+<h2>10. ストレージ監視</h2><table><tr><th>使用率・状態</th><th>動作</th></tr><tr><td>&lt;70%</td><td>Normal</td></tr><tr><td>70%</td><td>Warning</td></tr><tr><td>80%</td><td>拡張または移行計画を開始</td></tr><tr><td>85%</td><td>管理者警告</td></tr><tr><td>90%</td><td>大容量Job/Upload制限</td></tr><tr><td>95%</td><td>緊急保護モード</td></tr><tr><td>未マウント・read-only・I/Oエラー</td><td>書込み停止、管理者通知、障害手順へ移行</td></tr></table><p>使用率に加え、マウント状態、ファイルシステムエラー、カーネルI/Oエラーを監視する。USBブリッジ経由で取得可能な場合はS.M.A.R.T.情報と温度も監視する。</p>
+<h2>11. 10TB HDD初期導入手順設計</h2><ol><li>対象が新規10TB HDDであることを型番・シリアル番号・容量で確認</li><li>必要に応じて初期健全性診断とS.M.A.R.T.確認</li><li>GPTパーティション作成</li><li>ext4フォーマット</li><li>UUID確認</li><li><code>/mnt/storage</code>作成と所有者・権限設定</li><li><code>/etc/fstab</code>へUUID指定で登録</li><li>mountpoint、期待UUID、読書き、再起動後の自動マウントを確認</li><li>アプリケーションの起動依存と未マウント時の停止を確認</li><li>Storage Monitorで容量・警告・エラー監視を確認</li></ol>
+<h2>12. バックアップ/障害対策</h2><p>新規10TB HDD 1台は単一障害点であり、故障・誤削除・ファイルシステム破損・筐体障害からデータを保護しない。Pilot期間中も重要Project、設定、DB、監査情報を10TB HDDとは別の媒体または別システムへ定期バックアップし、復元テストを行う。バックアップ先の容量、頻度、保持世代、暗号化、RPO/RTOはPilot開始前に確定する。既存4TB HDDは容量不足のため10TB全体の完全バックアップとはみなさず、再利用時は対象データを限定して健全性を確認する。</p>
+<h2>13. ログ設計</h2><ul><li>Application Log</li><li>Access Log</li><li>Agent Log</li><li>Storage Log</li><li>Audit Log</li><li>DeepSeek API Usage Log</li></ul>
+<h2>14. Pilot受入テスト</h2><ul><li>10ユーザー作成・利用</li><li>ユーザー間データ隔離</li><li>Project共有</li><li>100GB/User Quota判定</li><li>Agent Sandbox隔離</li><li>大容量Upload制御</li><li>使用率70/80/90/95%の警告・制限テスト</li><li>10TB HDDの容量、UUIDマウント、再起動後の自動マウント確認</li><li>HDD未接続・未マウント・read-only時の書込み停止確認</li><li>別媒体または別システムからのバックアップ復元テスト</li><li>DeepSeek API障害時のエラー処理</li><li>監査ログ確認</li></ul>
+<h2>15. 保留事項</h2><ul><li>Entra ID SSO</li><li>OneDrive</li><li>SharePoint</li><li>本番バックアップ先・頻度・保持世代・RPO/RTO</li><li>正式な長期ログ保持期間</li><li>全社展開時のユーザー数・容量・冗長化設計</li></ul>
+</body></html>
