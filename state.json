@@ -1,0 +1,35 @@
+{
+  "project": "Mirai-AI-Work-Platform",
+  "repo": "Kensan196948G/Mirai-AI-Work-Platform",
+  "updated_at": "2026-08-19",
+  "phase": "mvp-release",
+  "status": {
+    "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com",
+    "prod_url": "https://ai-work.mirai-dx-platform.com",
+    "mvp_deployed": true,
+    "prod_deployed": false,
+    "neon_db": "mirai_ai_work_platform",
+    "neon_verify_db": "mirai_ai_work_platform_verify"
+  },
+  "verification": {
+    "unit_tests": 47,
+    "api_smoke": "20/20",
+    "browser_e2e": "16/16",
+    "db_checks": "11/11",
+    "verify": "PASS",
+    "security_scan": "PASS"
+  },
+  "ai": {
+    "mvp_provider": "demo",
+    "prod_provider": "deepseek",
+    "deepseek_key_registered": false
+  },
+  "residual_risks": [
+    "DeepSeek APIキー未登録 — 本番AI有効化には Secret 登録が必要",
+    "物理 /mnt/storage (10TB HDD) は on-prem 導入時に実装 — クラウドMVPはシミュレーション",
+    "Agent Sandbox (一時コンテナ) は on-prem 導入時に実装",
+    "ファイル実体はストレージ層 — クラウドMVPはメタデータ管理",
+    "SSO/MFA/OneDrive/SharePoint はスコープ外 (保留)",
+    "Cloudflare Access は本番でも未適用 — ローカル認証 (将来適用検討)"
+  ]
+}
