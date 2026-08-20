@@ -2,7 +2,7 @@
 // 認証ロジックのテスト (PBKDF2 ハッシュ・照合・セッショントークン)
 // ============================================================================
 import { describe, expect, it } from "vitest";
-import { hashPassword, verifyPassword, generateSessionToken, sha256Hex } from "../worker/src/auth";
+import { hashPassword, verifyPassword, generateSessionToken, sha256Hex, getBypassLoginId } from "../worker/src/auth";
 
 describe("hashPassword / verifyPassword", () => {
   it("生成したハッシュでパスワードを照合できる", async () => {
@@ -42,5 +42,43 @@ describe("generateSessionToken / sha256Hex", () => {
     const a = generateSessionToken().token;
     const b = generateSessionToken().token;
     expect(a).not.toBe(b);
+  });
+});
+
+// ============================================================================
+// MVP 公開デモ用のログイン認証バイパス (getBypassLoginId)
+// ============================================================================
+describe("getBypassLoginId", () => {
+  /** ReqCtx の最小スタブ (ヘッダー取得のみ利用される) */
+  const ctx = (headers: Record<string, string> = {}) =>
+    ({ req: { header: (name: string) => headers[name] } }) as unknown as Parameters<typeof getBypassLoginId>[0];
+
+  it("ALLOW_LOCAL_AUTH_BYPASS が true でなければ常に null", () => {
+    const env = { ALLOW_LOCAL_AUTH_BYPASS: "false", DEMO_DEFAULT_LOGIN_ID: "naoki.sato" } as never;
+    expect(getBypassLoginId(ctx({ "X-Demo-User": "naoki.sato" }), env)).toBe(null);
+  });
+
+  it("バイパス有効かつ X-Demo-User 指定時はそのユーザー", () => {
+    const env = { ALLOW_LOCAL_AUTH_BYPASS: "true" } as never;
+    expect(getBypassLoginId(ctx({ "X-Demo-User": "m.suzuki" }), env)).toBe("m.suzuki");
+  });
+
+  it("ヘッダー未指定でも DEMO_DEFAULT_LOGIN_ID があれば既定利用者になる", () => {
+    const env = { ALLOW_LOCAL_AUTH_BYPASS: "true", DEMO_DEFAULT_LOGIN_ID: "naoki.sato" } as never;
+    expect(getBypassLoginId(ctx(), env)).toBe("naoki.sato");
+  });
+
+  it("ヘッダーも既定利用者も無ければ null (従来どおりログインが必要)", () => {
+    const env = { ALLOW_LOCAL_AUTH_BYPASS: "true" } as never;
+    expect(getBypassLoginId(ctx(), env)).toBe(null);
+  });
+
+  it("ADMIN_LOGIN_IDS で許可リストが指定されていれば既定利用者にも適用される", () => {
+    const env = {
+      ALLOW_LOCAL_AUTH_BYPASS: "true",
+      DEMO_DEFAULT_LOGIN_ID: "k.tanaka",
+      ADMIN_LOGIN_IDS: "naoki.sato",
+    } as never;
+    expect(getBypassLoginId(ctx(), env)).toBe(null);
   });
 });

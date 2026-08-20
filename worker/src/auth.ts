@@ -106,7 +106,10 @@ export function getSessionToken(c: ReqCtx): string | null {
  *  サーバー側で行うため、権限差の検証も可能。 */
 export function getBypassLoginId(c: ReqCtx, env: Env): string | null {
   if (env.ALLOW_LOCAL_AUTH_BYPASS !== "true") return null;
-  const loginId = c.req.header("X-Demo-User");
+  // MVP 公開デモ: ブラウザからの素のアクセスは X-Demo-User を送れないため、
+  // ヘッダー未指定時は DEMO_DEFAULT_LOGIN_ID を既定利用者として扱う。
+  // 未設定ならヘッダー必須の従来動作（＝ログインが必要）のまま。
+  const loginId = c.req.header("X-Demo-User") ?? env.DEMO_DEFAULT_LOGIN_ID ?? null;
   if (!loginId) return null;
   const allowed = (env.ADMIN_LOGIN_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   // バイパス時は指定ユーザーのみ許可 (未指定なら既存ユーザー全員を許可)
