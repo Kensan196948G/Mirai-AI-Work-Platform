@@ -37,16 +37,30 @@ async function login(id = "naoki.sato", pw = "mirai-demo") {
   await page.waitForSelector(".shell", { timeout: 15000 });
 }
 
-await step("ログイン画面が表示される", async () => {
-  await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-  await page.waitForSelector(".login", { timeout: 15000 });
-});
+// MVP環境 (URLに mvp を含む) は ALLOW_LOCAL_AUTH_BYPASS=true のため、
+// 初期ロード時にヘッダー無しでも既定利用者として自動認証される (PR #5)。
+// 本番は従来どおりログイン画面からのサインインを検証する。
+const isMvpEnv = /mvp/i.test(BASE);
 
-await step("利用者ID/パスワードでサインインできる (naoki.sato / mirai-demo)", async () => {
-  await login();
-  const text = await page.textContent("h1");
-  if (!text || !text.includes("おかえりなさい")) throw new Error(`h1=${text}`);
-});
+if (isMvpEnv) {
+  await step("MVPバイパス: ヘッダー無しで自動ログインされホームが表示される", async () => {
+    await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".shell", { timeout: 15000 });
+    const body = await page.textContent(".main");
+    if (!body.includes("おかえりなさい")) throw new Error("ホームの挨拶なし");
+  });
+} else {
+  await step("ログイン画面が表示される", async () => {
+    await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
+    await page.waitForSelector(".login", { timeout: 15000 });
+  });
+
+  await step("利用者ID/パスワードでサインインできる (naoki.sato / mirai-demo)", async () => {
+    await login();
+    const text = await page.textContent("h1");
+    if (!text || !text.includes("おかえりなさい")) throw new Error(`h1=${text}`);
+  });
+}
 
 await step("左ナビに Chat/Work/Projects/Files/Agents/Admin が存在", async () => {
   const nav = await page.textContent(".nav");
