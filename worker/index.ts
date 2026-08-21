@@ -677,6 +677,12 @@ app.post("/api/v1/projects", zValidator("json", projectSchema), async (c) => {
     return jsonError(c, 403, "ROLE_DENIED", "Project作成には所有者または管理者権限が必要です。", false);
   }
   const body = c.req.valid("json");
+  // 重複フォルダ名の事前チェック (UNIQUE違反を 500 ではなく 409 で返す)
+  const dup = await db(c)`SELECT 1 FROM projects WHERE folder_name = ${body.folder_name} LIMIT 1`;
+  if (dup[0]) {
+    await audit(c, "PROJECT_CREATE", { resourceType: "project", resourceId: body.folder_name, result: "denied" });
+    return jsonError(c, 409, "FOLDER_NAME_TAKEN", "このフォルダ名は既に使用されています。", false);
+  }
   const rows = await db(c)`
     INSERT INTO projects (name, folder_name, description, owner_id, storage_quota_bytes)
     VALUES (${body.name}, ${body.folder_name}, ${body.description ?? ""}, ${user.id},

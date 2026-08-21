@@ -205,16 +205,30 @@ await step("Admin Project管理: 編集できる", async () => {
 });
 
 await step("Admin Project管理: 削除できる (検証用Projectを作成→削除)", async () => {
-  // 削除対象の検証用ProjectをAPIで作成 (管理者セッション)
-  const created = await page.evaluate(async () => {
+  // 冪等化: 過去実行の残骸があれば先に削除し、ユニークな folder_name を使う
+  const runTag = Date.now().toString(36);
+  const folderName = `e2e-del-${runTag}`;
+  const projectName = `E2E削除検証${runTag}`;
+  const created = await page.evaluate(async ({ folderName, projectName }) => {
+    // 残骸があれば削除 (409/404 は無視)
+    const existing = await fetch(`/api/v1/admin/projects?q=${folderName}`, { credentials: "include" });
+    if (existing.ok) {
+      const data = await existing.json();
+      for (const p of data.projects ?? []) {
+        if (p.folder_name === folderName) {
+          await fetch(`/api/v1/admin/projects/${p.id}`, { method: "DELETE", credentials: "include" });
+        }
+      }
+    }
     const res = await fetch("/api/v1/projects", {
       method: "POST", credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "E2E削除検証", folder_name: "e2e-delete-check", description: "E2Eで削除検証用に作成", storage_quota_bytes: 53687091200 }),
+      body: JSON.stringify({ name: projectName, folder_name: folderName, description: "E2Eで削除検証用に作成", storage_quota_bytes: 53687091200 }),
     });
-    return { ok: res.ok, body: await res.json() };
-  });
-  if (!created.ok) throw new Error("検証用Project作成失敗");
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(`作成失敗 HTTP ${res.status}: ${JSON.stringify(body).slice(0, 150)}`);
+    return { id: body.project?.id };
+  }, { folderName, projectName });
   await page.waitForTimeout(800);
   // 一覧を再読込 (タブ切替でリロード)
   await page.click('.tab:has-text("利用者管理")');
@@ -222,7 +236,7 @@ await step("Admin Project管理: 削除できる (検証用Projectを作成→�
   await page.click('.tab:has-text("Project管理")');
   await page.waitForSelector('.card .tbl tbody tr', { timeout: 15000 });
   // 該当行を削除
-  const rowHandle = await page.$(`.card .tbl tbody tr:has-text("E2E削除検証")`);
+  const rowHandle = await page.$(`.card .tbl tbody tr:has-text("${projectName}")`);
   if (!rowHandle) throw new Error("削除対象行が見つかりません");
   page.once("dialog", (d) => d.accept());
   const delBtn = await rowHandle.$('button[aria-label="削除"]');
@@ -230,12 +244,19 @@ await step("Admin Project管理: 削除できる (検証用Projectを作成→�
   await delBtn.click();
   await page.waitForTimeout(2000);
   const after = await page.textContent(".card .tbl");
-  if (after.includes("E2E削除検証")) throw new Error("削除が反映されていません");
+  if (after.includes(projectName)) throw new Error("削除が反映されていません");
 });
 
 await step("Admin AI設定: APIキー保存→テスト→クリアが機能する", async () => {
   await page.click('.tab:has-text("AI設定")');
   await page.waitForSelector("#ai-apikey", { timeout: 10000 });
+  // 冪等化: 過去実行でキーが残っていれば先にクリアする (dialog 承認)
+  const hasKey = await page.$eval(".main", (el) => el.textContent?.includes("設定済み") ?? false).catch(() => false);
+  if (hasKey) {
+    page.once("dialog", (d) => d.accept());
+    await page.click("#ai-key-clear");
+    await page.waitForTimeout(1500);
+  }
   await page.fill("#ai-apikey", "sk-e2e-test-key-123456");
   await page.click("#ai-key-save");
   await page.waitForTimeout(1800);
