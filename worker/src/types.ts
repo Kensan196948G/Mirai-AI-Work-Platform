@@ -16,6 +16,8 @@ export type Env = {
   ALLOWED_ORIGINS?: string;
   ADMIN_LOGIN_IDS?: string;
   ALLOW_LOCAL_AUTH_BYPASS?: string;
+  /** バイパス時に X-Demo-User が無い場合の既定利用者 (MVP 公開デモ用) */
+  DEMO_DEFAULT_LOGIN_ID?: string;
   // ストレージシミュレーション (物理 /mnt/storage は on-prem Pilot 要件)
   STORAGE_TOTAL_BYTES?: string;
   STORAGE_EXPECTED_UUID?: string;

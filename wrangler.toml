@@ -64,6 +64,9 @@ crons = []
 APP_BASE_URL = "https://ai-work-mvp.mirai-dx-platform.com"
 ALLOWED_ORIGINS = "https://ai-work-mvp.mirai-dx-platform.com"
 ALLOW_LOCAL_AUTH_BYPASS = "true"
+# MVP 公開デモ: ログイン認証を一時的に無効化する。X-Demo-User ヘッダーが無い
+# 素のブラウザアクセスも、この利用者として扱う (復旧は本行を削除して再デプロイ)。
+DEMO_DEFAULT_LOGIN_ID = "naoki.sato"
 # バイパス時の利用者制限 (空 = 既存ユーザー全員を許可。RBACはサーバー側で実施)
 ADMIN_LOGIN_IDS = ""
 AI_PROVIDER = "demo"
