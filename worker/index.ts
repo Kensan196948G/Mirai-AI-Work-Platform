@@ -33,22 +33,27 @@ const app = new Hono<{ Bindings: Env; Variables: import("./src/types").AppVars }
 // 完全な分散一貫性は Cloudflare Rate Limiting / DO 導入時に強化する。
 // ---------------------------------------------------------------------------
 const RATE_WINDOW_MS = 60_000;
-const globalLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 600);   // 全体: 600 req/min/IP
-const loginLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 10);     // ログイン: 10回/min/IP
-const chatLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 30);      // AI送信: 30回/min/IP
+const loginLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 10);     // ログイン: 10回/min/IP (総当たり対策)
+const chatLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 30);      // AI送信: 30回/min/IP (費用暴走防止)
 
-/** env.RATE_LIMIT_PER_MIN を尊重して適用 (既定 120) */
-function applyRateLimit(c: AppContext, limiter: FixedWindowRateLimiter, name: string): Response | null {
-  const maxPerMin = Number(c.env.RATE_LIMIT_PER_MIN ?? 120);
-  const effective = new FixedWindowRateLimiter(RATE_WINDOW_MS, maxPerMin);
+// env.RATE_LIMIT_PER_MIN を反映した全体リミッタ (遅延初期化: env はリクエスト時にしか読めない)
+let globalLimiter: FixedWindowRateLimiter | null = null;
+function getGlobalLimiter(env: Env): FixedWindowRateLimiter {
+  if (!globalLimiter) {
+    const maxPerMin = Number(env.RATE_LIMIT_PER_MIN ?? 120);
+    globalLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, Number.isFinite(maxPerMin) && maxPerMin > 0 ? maxPerMin : 120);
+  }
+  return globalLimiter;
+}
+
+/** 指定リミッタでレート制限を適用。制限超過時は 429 Response を返す。
+ *  キーは IP のみ (リミッタが役割別: login/chat/global)。パスを含めると
+ *  会話ごと等でキーが分岐し制限を回避できるため含めない。 */
+function applyRateLimit(c: AppContext, limiter: FixedWindowRateLimiter): Response | null {
   const ip = clientIp(c.req.raw.headers);
-  const key = `${name}:${ip}`;
-  const r = limiter.check(key);
-  const maxKey = `${name}max:${ip}`;
-  const rMax = effective.check(maxKey);
-  if (!r.ok || !rMax.ok) {
-    const retryAfter = Math.max(r.retryAfterSec, rMax.retryAfterSec);
-    c.header("Retry-After", String(retryAfter));
+  const r = limiter.check(ip);
+  if (!r.ok) {
+    c.header("Retry-After", String(r.retryAfterSec));
     return c.json({
       error: { code: "RATE_LIMITED", message: "リクエストが多すぎます。しばらく待ってから再試行してください。", retryable: true },
     }, 429);
@@ -107,7 +112,7 @@ app.use("/api/v1/*", async (c, next) => {
   const ctx = c as AppContext;
   if (ctx.req.path === "/api/v1/auth/login" || ctx.req.path === "/api/v1/health") return next();
   // P1: 全体レート制限 (env.RATE_LIMIT_PER_MIN、既定120/min/IP)
-  const rl = applyRateLimit(ctx, globalLimiter, "global");
+  const rl = applyRateLimit(ctx, getGlobalLimiter(ctx.env));
   if (rl) return rl;
   const bypass = getBypassLoginId(ctx, ctx.env);
   if (bypass) {
@@ -189,7 +194,7 @@ const loginSchema = z.object({
 app.post("/api/v1/auth/login", zValidator("json", loginSchema), async (c) => {
   const ctx = c as AppContext;
   // P1: ログインは厳格なレート制限 (総当たり対策: 10回/min/IP)
-  const rl = applyRateLimit(ctx, loginLimiter, "login");
+  const rl = applyRateLimit(ctx, loginLimiter);
   if (rl) return rl;
   const { login_id, password } = c.req.valid("json");
   const user = await loadUserByLogin(c, login_id);
@@ -364,7 +369,7 @@ const messageSchema = z.object({ content: z.string().min(1).max(8000) });
 app.post("/api/v1/conversations/:id/messages", zValidator("json", messageSchema), async (c) => {
   const user = c.get("user") as AuthUser;
   // P1: AI送信は個別レート制限 (30回/min/IP — 費用暴走とAPI乱用の抑止)
-  const rl = applyRateLimit(c as AppContext, chatLimiter, "chat");
+  const rl = applyRateLimit(c as AppContext, chatLimiter);
   if (rl) return rl;
   const { content } = c.req.valid("json");
   const conv = await db(c)`SELECT * FROM conversations WHERE id = ${c.req.param("id")} AND user_id = ${user.id} LIMIT 1`;
