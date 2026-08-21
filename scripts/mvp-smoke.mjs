@@ -57,12 +57,27 @@ await step("GET /api/v1/auth/me → ユーザー取得成功", async () => {
   return d.user.login_id;
 });
 
-// 3. 未認証アクセスは拒否 (fail-closed)
-await step("未認証 GET /api/v1/dashboard → 401", async () => {
-  const res = await fetch(`${BASE}/api/v1/dashboard`);
-  if (res.status !== 401) throw new Error(`HTTP ${res.status} (期待 401)`);
-  return "401";
-});
+// 3. 未認証アクセスの扱い (環境別)
+//    - MVP (URLに mvp を含む): ALLOW_LOCAL_AUTH_BYPASS=true + DEMO_DEFAULT_LOGIN_ID により、
+//      ヘッダー無しでも既定利用者として通過する (PR #5 の仕様)
+//    - 本番: バイパス無効のため未認証は 401 (fail-closed)
+const isMvpEnv = /mvp/i.test(BASE);
+await step(
+  isMvpEnv
+    ? "未認証 GET /api/v1/dashboard → 既定利用者として通過 (MVPバイパス)"
+    : "未認証 GET /api/v1/dashboard → 401",
+  async () => {
+    const res = await fetch(`${BASE}/api/v1/dashboard`);
+    if (isMvpEnv) {
+      if (res.status !== 200) throw new Error(`HTTP ${res.status} (期待 200)`);
+      const data = await res.json();
+      if (!data.user?.login_id) throw new Error("既定利用者が特定できない");
+      return `200 as ${data.user.login_id}`;
+    }
+    if (res.status !== 401) throw new Error(`HTTP ${res.status} (期待 401)`);
+    return "401";
+  }
+);
 
 // 4. ダッシュボード
 await step("GET /api/v1/dashboard → 最近の会話・Work", async () => {
