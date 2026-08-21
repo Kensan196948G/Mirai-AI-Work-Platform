@@ -23,8 +23,38 @@ import {
   normalizeRelativePath, isSafeFileName, type User, type Work,
   type AgentRun, type TaskItem, type Artifact, type FileItem,
 } from "./src/shared";
+import { FixedWindowRateLimiter, clientIp } from "./src/ratelimit";
 
 const app = new Hono<{ Bindings: Env; Variables: import("./src/types").AppVars }>();
+
+// ---------------------------------------------------------------------------
+// レート制限 (固定窓・in-memory。単一アイソレート内のベストエフォート)
+// 正本: doc/14_セキュリティ設計.md — ログイン総当たり対策とAPI乱用の抑止。
+// 完全な分散一貫性は Cloudflare Rate Limiting / DO 導入時に強化する。
+// ---------------------------------------------------------------------------
+const RATE_WINDOW_MS = 60_000;
+const globalLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 600);   // 全体: 600 req/min/IP
+const loginLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 10);     // ログイン: 10回/min/IP
+const chatLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 30);      // AI送信: 30回/min/IP
+
+/** env.RATE_LIMIT_PER_MIN を尊重して適用 (既定 120) */
+function applyRateLimit(c: AppContext, limiter: FixedWindowRateLimiter, name: string): Response | null {
+  const maxPerMin = Number(c.env.RATE_LIMIT_PER_MIN ?? 120);
+  const effective = new FixedWindowRateLimiter(RATE_WINDOW_MS, maxPerMin);
+  const ip = clientIp(c.req.raw.headers);
+  const key = `${name}:${ip}`;
+  const r = limiter.check(key);
+  const maxKey = `${name}max:${ip}`;
+  const rMax = effective.check(maxKey);
+  if (!r.ok || !rMax.ok) {
+    const retryAfter = Math.max(r.retryAfterSec, rMax.retryAfterSec);
+    c.header("Retry-After", String(retryAfter));
+    return c.json({
+      error: { code: "RATE_LIMITED", message: "リクエストが多すぎます。しばらく待ってから再試行してください。", retryable: true },
+    }, 429);
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // ミドルウェア
@@ -76,6 +106,9 @@ async function loadUserById(c: AppContext, id: string): Promise<AuthUser | null>
 app.use("/api/v1/*", async (c, next) => {
   const ctx = c as AppContext;
   if (ctx.req.path === "/api/v1/auth/login" || ctx.req.path === "/api/v1/health") return next();
+  // P1: 全体レート制限 (env.RATE_LIMIT_PER_MIN、既定120/min/IP)
+  const rl = applyRateLimit(ctx, globalLimiter, "global");
+  if (rl) return rl;
   const bypass = getBypassLoginId(ctx, ctx.env);
   if (bypass) {
     const user = await loadUserByLogin(ctx, bypass);
@@ -134,11 +167,12 @@ app.get("/api/v1/health", async (c) => {
     dbOk = true;
   } catch (e) {
     dbError = (e as Error).message.slice(0, 120);
+    // P6: 詳細は内部ログのみ。応答には含めない (情報漏えい防止)。
+    console.error(`[health] db error: ${dbError}`, { request_id: requestId(c) });
   }
   return c.json({
     status: dbOk ? "ok" : "degraded",
     db: dbOk,
-    db_error: dbError || undefined,
     request_id: requestId(c),
     time: new Date().toISOString(),
   });
@@ -153,6 +187,10 @@ const loginSchema = z.object({
 });
 
 app.post("/api/v1/auth/login", zValidator("json", loginSchema), async (c) => {
+  const ctx = c as AppContext;
+  // P1: ログインは厳格なレート制限 (総当たり対策: 10回/min/IP)
+  const rl = applyRateLimit(ctx, loginLimiter, "login");
+  if (rl) return rl;
   const { login_id, password } = c.req.valid("json");
   const user = await loadUserByLogin(c, login_id);
   if (!user) {
@@ -176,6 +214,11 @@ app.post("/api/v1/auth/login", zValidator("json", loginSchema), async (c) => {
     VALUES (${user.id}, ${tokenHash},
             ${c.req.header("CF-Connecting-IP") ?? null}, ${(c.req.header("User-Agent") ?? "").slice(0, 300)},
             now() + make_interval(hours => ${ttlHours}))`;
+  // P7: 期限切れセッションの掃除 (fire-and-forget、テーブル肥大化防止)
+  c.executionCtx.waitUntil(
+    db(c)`DELETE FROM sessions WHERE expires_at < now() - interval '7 days' OR revoked_at IS NOT NULL AND expires_at < now()`
+      .catch((e) => console.error("[sessions] cleanup failed:", (e as Error).message)),
+  );
   await db(c)`UPDATE users SET last_login_at = now() WHERE id = ${user.id}`;
   await audit(c, "LOGIN", { resourceId: login_id, result: "success" });
   const secure = c.req.url.startsWith("https://");
@@ -273,6 +316,11 @@ app.get("/api/v1/conversations", async (c) => {
 app.post("/api/v1/conversations", zValidator("json", convCreateSchema), async (c) => {
   const user = c.get("user") as AuthUser;
   const body = c.req.valid("json");
+  // P2: Project 指定時はメンバー/管理者のみ許可 (viewer も読み取り目的の会話は可)
+  if (body.project_id && !(await canAccessProject(c, user.id, body.project_id))) {
+    await audit(c, "CONVERSATION_CREATE", { resourceType: "project", resourceId: body.project_id, result: "denied" });
+    return jsonError(c, 403, "PROJECT_DENIED", "このProjectへのアクセス権がありません。", false);
+  }
   const title = body.title?.trim() || "新しい会話";
   const rows = await db(c)`
     INSERT INTO conversations (user_id, project_id, title) VALUES (${user.id}, ${body.project_id ?? null}, ${title})
@@ -315,6 +363,9 @@ const messageSchema = z.object({ content: z.string().min(1).max(8000) });
 /** Chat送信: ユーザーメッセージ保存 → AI応答生成 → 保存 */
 app.post("/api/v1/conversations/:id/messages", zValidator("json", messageSchema), async (c) => {
   const user = c.get("user") as AuthUser;
+  // P1: AI送信は個別レート制限 (30回/min/IP — 費用暴走とAPI乱用の抑止)
+  const rl = applyRateLimit(c as AppContext, chatLimiter, "chat");
+  if (rl) return rl;
   const { content } = c.req.valid("json");
   const conv = await db(c)`SELECT * FROM conversations WHERE id = ${c.req.param("id")} AND user_id = ${user.id} LIMIT 1`;
   if (!conv[0]) return jsonError(c, 404, "NOT_FOUND", "会話が見つかりません。", false);
@@ -339,7 +390,12 @@ app.post("/api/v1/conversations/:id/messages", zValidator("json", messageSchema)
     reply = await provider.chat([...historyMsgs, { role: "user", content }], { maxChars: 4000 });
   } catch (e) {
     errorCode = "AI_ERROR";
-    // エラー内容は内部ログ用 (要求IDで対応付け)。利用者には追跡IDのみ。
+    // P5: エラー詳細は内部ログのみ (要求IDで対応付け)。利用者には追跡IDのみ。
+    console.error(`[ai] chat error: ${(e as Error).message}`, {
+      request_id: requestId(c),
+      conversation_id: conv[0].id,
+      provider: provider.name,
+    });
   }
 
   if (reply) {
@@ -365,13 +421,24 @@ const workCreateSchema = z.object({
   project_id: z.string().uuid().nullable().optional(),
 });
 
-/** Project権限: メンバー or 管理者 */
+/** Project権限: 読み取り (メンバー or 管理者) */
 async function canAccessProject(c: AppContext, userId: string, projectId: string | null): Promise<boolean> {
   if (!projectId) return true;
   const user = c.get("user") as AuthUser;
   if (isAdmin(user.role)) return true;
   const rows = await db(c)`SELECT 1 FROM project_members WHERE project_id = ${projectId} AND user_id = ${userId} LIMIT 1`;
   return rows.length > 0;
+}
+
+/** Project権限: 書き込み (owner / member のみ。viewer は読み取り専用) */
+async function canWriteProject(c: AppContext, userId: string, projectId: string | null): Promise<boolean> {
+  if (!projectId) return true;
+  const user = c.get("user") as AuthUser;
+  if (isAdmin(user.role)) return true;
+  const rows = await db(c)`
+    SELECT role FROM project_members WHERE project_id = ${projectId} AND user_id = ${userId} LIMIT 1`;
+  const role = rows[0]?.role as string | undefined;
+  return role === "owner" || role === "member";
 }
 
 app.get("/api/v1/works", async (c) => {
@@ -390,9 +457,10 @@ app.get("/api/v1/works", async (c) => {
 app.post("/api/v1/works", zValidator("json", workCreateSchema), async (c) => {
   const user = c.get("user") as AuthUser;
   const { goal, constraints, project_id } = c.req.valid("json");
-  if (project_id && !(await canAccessProject(c, user.id, project_id))) {
+  // P3: Project への書き込み (Work作成) は owner/member のみ (viewer は読み取り専用)
+  if (project_id && !(await canWriteProject(c, user.id, project_id))) {
     await audit(c, "WORK_CREATE", { resourceId: goal.slice(0, 60), result: "denied" });
-    return jsonError(c, 403, "PROJECT_DENIED", "このProjectへのアクセス権がありません。", false);
+    return jsonError(c, 403, "PROJECT_DENIED", "このProjectへの書き込み権限がありません。", false);
   }
   const lenCheck = checkInputLength(goal, c.env);
   if (!lenCheck.ok) return jsonError(c, 413, "INPUT_TOO_LONG", `Goalは ${lenCheck.maxChars} 文字以内にしてください。`, false);
@@ -745,8 +813,11 @@ app.post("/api/v1/files", async (c) => {
   let quotaBytes = user.storage_quota_bytes;
   let usageBytes = Number(myUsage[0].used);
   if (scope === "project") {
-    if (!projectId || !(await canAccessProject(c, user.id, projectId))) {
-      return jsonError(c, 403, "PROJECT_DENIED", "このProjectへのアクセス権がありません。", false);
+    if (!projectId) return jsonError(c, 400, "BAD_REQUEST", "project_id が必要です。", false);
+    // P3: Project へのアップロードは owner/member のみ (viewer は読み取り専用)
+    if (!(await canWriteProject(c, user.id, projectId))) {
+      await audit(c, "FILE_UPLOAD", { resourceType: "project", resourceId: projectId, result: "denied" });
+      return jsonError(c, 403, "PROJECT_DENIED", "このProjectへの書き込み権限がありません。", false);
     }
     const prows = await db(c)`SELECT * FROM projects WHERE id = ${projectId} LIMIT 1`;
     if (!prows[0]) return jsonError(c, 404, "NOT_FOUND", "Projectが見つかりません。", false);
