@@ -1,42 +1,52 @@
 {
   "project": "Mirai-AI-Work-Platform",
   "repo": "Kensan196948G/Mirai-AI-Work-Platform",
-  "updated_at": "2026-08-19",
+  "updated_at": "2026-08-21",
   "phase": "production",
   "status": {
     "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com",
     "prod_url": "https://ai-work.mirai-dx-platform.com",
     "mvp_deployed": true,
     "prod_deployed": true,
+    "neon_project": "civil-cost-index-dashboard (hidden-pond-85970897)",
     "neon_db": "mirai_ai_work_platform",
-    "neon_verify_db": "mirai_ai_work_platform_verify"
+    "neon_verify_db": "mirai_ai_work_platform_verify",
+    "cloudflare_access": "本番に適用済み (owner-only: kensan1969@gmail.com, 2026-08-20 設定)"
   },
   "verification": {
-    "unit_tests": 47,
-    "api_smoke": "20/20",
-    "browser_e2e": "16/16",
-    "db_checks": "11/11",
+    "unit_tests": 62,
+    "api_smoke": "20/20 (MVP)",
+    "browser_e2e": "19/19 (MVP)",
+    "db_checks": "11/11 (空DB Migration→Seed→Verify 再実行)",
     "verify": "PASS",
     "security_scan": "PASS",
-    "production_e2e": "16/16",
-    "production_logs": "exceptions=0"
+    "ci": "PASS (PR #5/#6)"
+  },
+  "prs": {
+    "pr1": "squash merged (ee3462e)",
+    "pr2": "squash merged (a37043e)",
+    "pr3": "squash merged (e1746b5)",
+    "pr4": "squash merged (53e34e2)",
+    "pr5": "squash merged (f429019)",
+    "pr6": "pending (fix/e2e-mvp-bypass)"
   },
   "ai": {
     "mvp_provider": "demo",
-    "prod_provider": "deepseek",
+    "prod_provider": "demo",
     "deepseek_key_registered": false
   },
   "residual_risks": [
-    "DeepSeek APIキー未登録 — 本番AI有効化には Secret 登録が必要",
+    "DeepSeek APIキー未登録 — 本番AI有効化には Secret 登録が必要 (現状 demo 運用)",
     "物理 /mnt/storage (10TB HDD) は on-prem 導入時に実装 — クラウドMVPはシミュレーション",
     "Agent Sandbox (一時コンテナ) は on-prem 導入時に実装",
     "ファイル実体はストレージ層 — クラウドMVPはメタデータ管理",
     "SSO/MFA/OneDrive/SharePoint はスコープ外 (保留)",
-    "Cloudflare Access は本番でも未適用 — ローカル認証 (将来適用検討)"
+    "本番は Cloudflare Access 適用済み (owner-only) — 内部E2Eは Access セッションが必要",
+    "Neon は他プロジェクト (civil-cost-index-dashboard) と同一インスタンスに DB 追加した構成"
   ],
   "deploy": {
-    "pr1": "squash merged (ee3462e)",
-    "pr2": "squash merged (a37043e)",
+    "prod_version": "faa6bbb9-b251-48f0-b604-fe8d37283d0f (2026-08-21)",
+    "mvp_version": "fa380499-b5e8-4c89-996a-368dee9cb20c (2026-08-21)",
     "prod_url": "https://ai-work.mirai-dx-platform.com",
     "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com"
   }

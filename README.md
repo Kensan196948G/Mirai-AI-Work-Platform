@@ -17,15 +17,15 @@ DeepSeek API を中核とし、社内業務における **AIチャット、タ�
 
 | 項目 | 状態 |
 |---|---|
-| **MVP/Preview** | 🎉 **https://ai-work-mvp.mirai-dx-platform.com**（2026-08-19 デプロイ済み） |
-| 本番 | `ai-work.mirai-dx-platform.com`（デプロイ準備済み・リリースゲート通過後にデプロイ） |
+| **MVP/Preview** | 🎉 **https://ai-work-mvp.mirai-dx-platform.com**（2026-08-21 デプロイ済み） |
+| 本番 | ✅ **https://ai-work.mirai-dx-platform.com**（デプロイ済み・Cloudflare Access で保護） |
 | DB | Neon PostgreSQL（`mirai_ai_work_platform`、検証用 `mirai_ai_work_platform_verify`） |
 | ダミーデータ | 10ユーザー / 4Project / 5Work / 8ファイル / 4会話 / 10監査ログ（パスワード: `mirai-demo`） |
-| AI | MVP環境は `demo` プロバイダー（決定的ローカル応答・課金なし）。本番は `DEEPSEEK_API_KEY` 設定で有効化 |
-| 認証 | ローカル認証（PBKDF2-SHA256 パスワードハッシュ + HttpOnly Cookie セッション）。MVP環境は `X-Demo-User` バイパス（RBACはサーバー側で実施） |
-| 検証 | ✅ vitest 57件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **20/20 PASS**（デプロイ後E2E）<br/>✅ ブラウザE2E **20/20 PASS**（ログイン・Chat・Work・Files・Admin Project編集/削除・AI設定APIキー保存/テスト/クリア・レスポンシブ・キーボード）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS** |
+| AI | MVP環境・本番とも `demo` プロバイダー（決定的ローカル応答・課金なし）。本番は `DEEPSEEK_API_KEY` 設定で有効化 |
+| 認証 | ローカル認証（PBKDF2-SHA256 パスワードハッシュ + HttpOnly Cookie セッション）。MVP環境は `X-Demo-User` バイパスに加え、ヘッダー無しでも `DEMO_DEFAULT_LOGIN_ID` の既定利用者として自動認証（RBACはサーバー側で実施）。本番は Cloudflare Access（owner-only）+ ローカル認証の二重防御 |
+| 検証 | ✅ vitest 62件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **20/20 PASS**（デプロイ後E2E）<br/>✅ ブラウザE2E **19/19 PASS**（MVPバイパス・Chat・Work・Files・Admin Project編集/削除・AI設定APIキー保存/テスト/クリア・レスポンシブ・キーボード）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS**（再実行実証済み） |
 
-**検証用ログイン**: 利用者ID `naoki.sato` / パスワード `mirai-demo`（IT・DX管理者）。`k.tanaka`（一般利用者）等も同パスワードでサインインでき、権限差を確認できます。
+**検証用ログイン**: 利用者ID `naoki.sato` / パスワード `mirai-demo`（IT・DX管理者）。`k.tanaka`（一般利用者）等も同パスワードでサインインでき、権限差を確認できます。**MVP はヘッダー無しブラウザアクセスでも `naoki.sato` として自動ログインされます**（公開デモ用。復旧は `wrangler.toml` の `[env.mvp.vars]` から `DEMO_DEFAULT_LOGIN_ID` 行を削除して再デプロイ）。
 
 ---
 
