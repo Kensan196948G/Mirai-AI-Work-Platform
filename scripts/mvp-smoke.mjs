@@ -150,6 +150,34 @@ await step("GET /api/v1/projects/:id → メンバー・Files・Artifacts", asyn
   return `members=${d.members.length} files=${d.files.length} artifacts=${d.artifacts.length}`;
 });
 
+// 7b. P3: viewer ロールは読み取り専用 (書き込み操作は 403)
+const viewerHeaders = { "Content-Type": "application/json", "X-Demo-User": "y.yamada" };
+await step("viewer (y.yamada) で Project へ Work 作成 → 403 (P3 権限制限)", async () => {
+  const res = await fetch(`${BASE}/api/v1/works`, {
+    method: "POST",
+    headers: viewerHeaders,
+    body: JSON.stringify({ goal: "viewer権限テスト: 書き込みは拒否されるべき", project_id: projId }),
+  });
+  if (res.status !== 403) throw new Error(`HTTP ${res.status} (期待 403)`);
+  return "403";
+});
+await step("viewer (y.yamada) で Project へファイルアップロード → 403 (P3 権限制限)", async () => {
+  const form = new FormData();
+  form.append("file", new Blob(["viewer-test"], { type: "text/plain" }), "viewer_test.txt");
+  const res = await fetch(`${BASE}/api/v1/files?scope=project&project_id=${projId}`, {
+    method: "POST",
+    headers: { "X-Demo-User": "y.yamada" },
+    body: form,
+  });
+  if (res.status !== 403) throw new Error(`HTTP ${res.status} (期待 403)`);
+  return "403";
+});
+await step("viewer (y.yamada) で Project 読み取り → 200 (読み取りは許可)", async () => {
+  const res = await fetch(`${BASE}/api/v1/projects/${projId}`, { headers: viewerHeaders });
+  if (res.status !== 200) throw new Error(`HTTP ${res.status} (期待 200)`);
+  return "200";
+});
+
 // 8. Files: アップロード → 一覧 → 削除
 await step("POST /api/v1/files (アップロード) → 201", async () => {
   const form = new FormData();
