@@ -1,13 +1,15 @@
 // ============================================================================
 // Mirai AI Work Platform — worker/src/ratelimit.ts
-// レート制限（固定窓・in-memory）
+// レート制限（固定窓）
 // 正本: doc/14_セキュリティ設計.md, doc/13_認証認可設計.md
 //
-// 注意: Workers の in-memory 実装は単一アイソレート内で有効なベストエフォート
-// 方式です。複数エッジロケーション・複数インスタンスでの完全な一貫性は
-// 保証されません（Cloudflare の Rate Limiting / Durable Objects 導入時に
-// 強化する）。ログイン総当たり対策と異常トラフィックの大幅削減を目的とし、
-// 完全な遮断を保証するものではありません。
+// 実装方針:
+// - 本番: Cloudflare KV ベース（アイソレート間で状態を共有するため、
+//   in-memory では複数アイソレートに分散されたリクエストを数えられない）
+// - テスト/フォールバック: FixedWindowRateLimiter (in-memory)
+// KV は「最終書き込みが勝つ」ため同時実行時のカウント欠落はあり得る。
+// 固定窓のベストエフォート実装であり、完全な遮断を保証するものではない
+// （高精度な分散レート制限は Cloudflare Rate Limiting / DO 導入時に強化）。
 // ============================================================================
 
 export interface RateLimitResult {
@@ -22,7 +24,7 @@ interface WindowEntry {
 }
 
 /**
- * 固定窓レートリミッタ。
+ * 固定窓レートリミッタ (in-memory)。単一アイソレート内でのみ有効。
  * key ごとに windowMs 内で max 回まで許可する。
  * エントリは最終アクセスから maxIdleMs 経過で破棄される。
  */
@@ -77,6 +79,40 @@ export class FixedWindowRateLimiter {
         this.entries.delete(k);
       }
     }
+  }
+}
+
+/** KV の get 結果（文字列または null）を表す最小形状 */
+export interface KvLike {
+  get(key: string, type: "text"): Promise<string | null>;
+  put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
+}
+
+/**
+ * 固定窓レートリミッタ (Cloudflare KV ベース)。
+ * 窓キー = `${key}:${floor(now/windowMs)}` で、KV に count を保持する。
+ * 窓の TTL は windowMs を少し上回る値に設定し、自然失効させる。
+ */
+export class KvRateLimiter {
+  constructor(
+    private readonly kv: KvLike,
+    private readonly windowMs: number,
+    private readonly max: number,
+  ) {}
+
+  async check(key: string, now = Date.now()): Promise<RateLimitResult> {
+    const windowKey = `${key}:${Math.floor(now / this.windowMs)}`;
+    const raw = await this.kv.get(windowKey, "text").catch(() => null);
+    const prev = raw ? Number(raw) : 0;
+    const count = (Number.isFinite(prev) ? prev : 0) + 1;
+    if (count > this.max) {
+      const elapsed = now % this.windowMs;
+      const retryAfterSec = Math.max(1, Math.ceil((this.windowMs - elapsed) / 1000));
+      return { ok: false, remaining: 0, retryAfterSec };
+    }
+    const ttlSec = Math.ceil(this.windowMs / 1000) + 60; // 窓+1分の余裕
+    await this.kv.put(windowKey, String(count), { expirationTtl: ttlSec }).catch(() => undefined);
+    return { ok: true, remaining: this.max - count, retryAfterSec: 0 };
   }
 }
 

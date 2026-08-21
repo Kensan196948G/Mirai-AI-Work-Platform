@@ -18,6 +18,8 @@ export type Env = {
   ALLOW_LOCAL_AUTH_BYPASS?: string;
   /** バイパス時に X-Demo-User が無い場合の既定利用者 (MVP 公開デモ用) */
   DEMO_DEFAULT_LOGIN_ID?: string;
+  /** レート制限用 KV (アイソレート間で状態共有) */
+  RATE_LIMIT_KV?: import("@cloudflare/workers-types").KVNamespace;
   // ストレージシミュレーション (物理 /mnt/storage は on-prem Pilot 要件)
   STORAGE_TOTAL_BYTES?: string;
   STORAGE_EXPECTED_UUID?: string;

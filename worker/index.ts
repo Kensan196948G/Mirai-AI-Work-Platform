@@ -23,25 +23,32 @@ import {
   normalizeRelativePath, isSafeFileName, type User, type Work,
   type AgentRun, type TaskItem, type Artifact, type FileItem,
 } from "./src/shared";
-import { FixedWindowRateLimiter, clientIp } from "./src/ratelimit";
+import { FixedWindowRateLimiter, KvRateLimiter, clientIp, type KvLike } from "./src/ratelimit";
 
 const app = new Hono<{ Bindings: Env; Variables: import("./src/types").AppVars }>();
 
 // ---------------------------------------------------------------------------
-// レート制限 (固定窓・in-memory。単一アイソレート内のベストエフォート)
+// レート制限 (固定窓。KV ベースでアイソレート間の状態を共有)
 // 正本: doc/14_セキュリティ設計.md — ログイン総当たり対策とAPI乱用の抑止。
-// 完全な分散一貫性は Cloudflare Rate Limiting / DO 導入時に強化する。
+// KV 未バインド時 (ローカル実行) は in-memory にフォールバックする。
 // ---------------------------------------------------------------------------
 const RATE_WINDOW_MS = 60_000;
-const loginLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 10);     // ログイン: 10回/min/IP (総当たり対策)
-const chatLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, 30);      // AI送信: 30回/min/IP (費用暴走防止)
+const LOGIN_MAX = 10;   // ログイン: 10回/min/IP (総当たり対策)
+const CHAT_MAX = 30;    // AI送信: 30回/min/IP (費用暴走防止)
+
+/** KV バインド or in-memory からリミッタを構築 */
+function buildLimiter(env: Env, max: number): KvRateLimiter | FixedWindowRateLimiter {
+  const kv = env.RATE_LIMIT_KV as KvLike | undefined;
+  if (kv) return new KvRateLimiter(kv, RATE_WINDOW_MS, max);
+  return new FixedWindowRateLimiter(RATE_WINDOW_MS, max);
+}
 
 // env.RATE_LIMIT_PER_MIN を反映した全体リミッタ (遅延初期化: env はリクエスト時にしか読めない)
-let globalLimiter: FixedWindowRateLimiter | null = null;
-function getGlobalLimiter(env: Env): FixedWindowRateLimiter {
+let globalLimiter: KvRateLimiter | FixedWindowRateLimiter | null = null;
+function getGlobalLimiter(env: Env): KvRateLimiter | FixedWindowRateLimiter {
   if (!globalLimiter) {
     const maxPerMin = Number(env.RATE_LIMIT_PER_MIN ?? 120);
-    globalLimiter = new FixedWindowRateLimiter(RATE_WINDOW_MS, Number.isFinite(maxPerMin) && maxPerMin > 0 ? maxPerMin : 120);
+    globalLimiter = buildLimiter(env, Number.isFinite(maxPerMin) && maxPerMin > 0 ? maxPerMin : 120);
   }
   return globalLimiter;
 }
@@ -49,9 +56,9 @@ function getGlobalLimiter(env: Env): FixedWindowRateLimiter {
 /** 指定リミッタでレート制限を適用。制限超過時は 429 Response を返す。
  *  キーは IP のみ (リミッタが役割別: login/chat/global)。パスを含めると
  *  会話ごと等でキーが分岐し制限を回避できるため含めない。 */
-function applyRateLimit(c: AppContext, limiter: FixedWindowRateLimiter): Response | null {
+async function applyRateLimit(c: AppContext, limiter: KvRateLimiter | FixedWindowRateLimiter): Promise<Response | null> {
   const ip = clientIp(c.req.raw.headers);
-  const r = limiter.check(ip);
+  const r = await limiter.check(ip);
   if (!r.ok) {
     c.header("Retry-After", String(r.retryAfterSec));
     return c.json({
@@ -112,7 +119,7 @@ app.use("/api/v1/*", async (c, next) => {
   const ctx = c as AppContext;
   if (ctx.req.path === "/api/v1/auth/login" || ctx.req.path === "/api/v1/health") return next();
   // P1: 全体レート制限 (env.RATE_LIMIT_PER_MIN、既定120/min/IP)
-  const rl = applyRateLimit(ctx, getGlobalLimiter(ctx.env));
+  const rl = await applyRateLimit(ctx, getGlobalLimiter(ctx.env));
   if (rl) return rl;
   const bypass = getBypassLoginId(ctx, ctx.env);
   if (bypass) {
@@ -194,7 +201,7 @@ const loginSchema = z.object({
 app.post("/api/v1/auth/login", zValidator("json", loginSchema), async (c) => {
   const ctx = c as AppContext;
   // P1: ログインは厳格なレート制限 (総当たり対策: 10回/min/IP)
-  const rl = applyRateLimit(ctx, loginLimiter);
+  const rl = await applyRateLimit(ctx, buildLimiter(ctx.env, LOGIN_MAX));
   if (rl) return rl;
   const { login_id, password } = c.req.valid("json");
   const user = await loadUserByLogin(c, login_id);
@@ -369,7 +376,7 @@ const messageSchema = z.object({ content: z.string().min(1).max(8000) });
 app.post("/api/v1/conversations/:id/messages", zValidator("json", messageSchema), async (c) => {
   const user = c.get("user") as AuthUser;
   // P1: AI送信は個別レート制限 (30回/min/IP — 費用暴走とAPI乱用の抑止)
-  const rl = applyRateLimit(c as AppContext, chatLimiter);
+  const rl = await applyRateLimit(c as AppContext, buildLimiter(c.env, CHAT_MAX));
   if (rl) return rl;
   const { content } = c.req.valid("json");
   const conv = await db(c)`SELECT * FROM conversations WHERE id = ${c.req.param("id")} AND user_id = ${user.id} LIMIT 1`;
