@@ -193,15 +193,22 @@ await step("Admin Project管理: 編集できる", async () => {
   await page.waitForSelector("#ap-name", { timeout: 8000 });
   await page.fill("#ap-name", firstName + " (E2E)");
   await page.click(".modal__foot .btn--primary");
-  await page.waitForTimeout(1800);
-  const edited = await page.textContent(".card .tbl");
-  if (!edited.includes(firstName + " (E2E)")) throw new Error("編集が反映されていません");
+  // 条件待機: 編集結果がテーブルに反映されるまで待つ (タイミング問題の解消)
+  await page.waitForFunction(
+    (name) => document.querySelector(".card .tbl")?.textContent?.includes(name) ?? false,
+    firstName + " (E2E)",
+    { timeout: 15000 },
+  );
   // 元に戻す
   await page.click('.card .tbl tbody tr:first-child button[aria-label="編集"]');
   await page.waitForSelector("#ap-name", { timeout: 8000 });
   await page.fill("#ap-name", firstName);
   await page.click(".modal__foot .btn--primary");
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(
+    (name) => !(document.querySelector(".card .tbl")?.textContent?.includes(name + " (E2E)") ?? true),
+    firstName,
+    { timeout: 15000 },
+  );
 });
 
 await step("Admin Project管理: 削除できる (検証用Projectを作成→削除)", async () => {
@@ -242,9 +249,12 @@ await step("Admin Project管理: 削除できる (検証用Projectを作成→�
   const delBtn = await rowHandle.$('button[aria-label="削除"]');
   if (!delBtn) throw new Error("削除ボタンが見つかりません");
   await delBtn.click();
-  await page.waitForTimeout(2000);
-  const after = await page.textContent(".card .tbl");
-  if (after.includes(projectName)) throw new Error("削除が反映されていません");
+  // 条件待機: 削除結果がテーブルに反映されるまで待つ
+  await page.waitForFunction(
+    (name) => !(document.querySelector(".card .tbl")?.textContent?.includes(name) ?? true),
+    projectName,
+    { timeout: 15000 },
+  );
 });
 
 await step("Admin AI設定: APIキー保存→テスト→クリアが機能する", async () => {
@@ -255,24 +265,35 @@ await step("Admin AI設定: APIキー保存→テスト→クリアが機能す�
   if (hasKey) {
     page.once("dialog", (d) => d.accept());
     await page.click("#ai-key-clear");
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(
+      () => !(document.querySelector(".main")?.textContent?.includes("設定済み") ?? true),
+      { timeout: 15000 },
+    );
   }
   await page.fill("#ai-apikey", "sk-e2e-test-key-123456");
   await page.click("#ai-key-save");
-  await page.waitForTimeout(1800);
-  let body = await page.textContent(".main");
-  if (!body.includes("暗号化して保存")) throw new Error("キー保存メッセージなし");
-  if (!body.includes("設定済み")) throw new Error("保存状態が反映されていません");
+  // 条件待機: 保存メッセージと「設定済み」表示を待つ
+  await page.waitForFunction(
+    () => {
+      const t = document.querySelector(".main")?.textContent ?? "";
+      return t.includes("暗号化して保存") && t.includes("設定済み");
+    },
+    { timeout: 15000 },
+  );
   await page.click("#ai-key-test");
   await page.waitForTimeout(3000);
-  body = await page.textContent(".main");
+  const body = await page.textContent(".main");
   if (!/接続成功|接続失敗/.test(body)) throw new Error("テスト接続結果が表示されていません");
   page.once("dialog", (d) => d.accept());
   await page.click("#ai-key-clear");
-  await page.waitForTimeout(1800);
-  body = await page.textContent(".main");
-  if (!body.includes("クリアしました")) throw new Error("クリアメッセージなし");
-  if (!body.includes("未設定")) throw new Error("クリア後も設定済みのまま");
+  // 条件待機: クリアメッセージと「未設定」表示を待つ
+  await page.waitForFunction(
+    () => {
+      const t = document.querySelector(".main")?.textContent ?? "";
+      return t.includes("クリアしました") && t.includes("未設定");
+    },
+    { timeout: 15000 },
+  );
 });
 
 await step("レスポンシブ: 幅375pxでナビがアイコンのみになる", async () => {
