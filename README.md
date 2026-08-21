@@ -23,7 +23,7 @@ DeepSeek API を中核とし、社内業務における **AIチャット、タ�
 | ダミーデータ | 10ユーザー / 4Project / 5Work / 8ファイル / 4会話 / 10監査ログ（パスワード: `mirai-demo`） |
 | AI | MVP環境・本番とも `demo` プロバイダー（決定的ローカル応答・課金なし）。本番は `DEEPSEEK_API_KEY` 設定で有効化 |
 | 認証 | ローカル認証（PBKDF2-SHA256 パスワードハッシュ + HttpOnly Cookie セッション）。MVP環境は `X-Demo-User` バイパスに加え、ヘッダー無しでも `DEMO_DEFAULT_LOGIN_ID` の既定利用者として自動認証（RBACはサーバー側で実施）。本番は Cloudflare Access（owner-only）+ ローカル認証の二重防御 |
-| 検証 | ✅ vitest 62件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **20/20 PASS**（デプロイ後E2E）<br/>✅ ブラウザE2E **19/19 PASS**（MVPバイパス・Chat・Work・Files・Admin Project編集/削除・AI設定APIキー保存/テスト/クリア・レスポンシブ・キーボード）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS**（再実行実証済み） |
+| 検証 | ✅ vitest 75件 / lint / tsc / build / security-scan PASS<br/>✅ APIスモーク **23/23 PASS**（デプロイ後E2E・viewer権限403含む）<br/>✅ ブラウザE2E **19/19 PASS**（MVPバイパス・Chat・Work・Files・Admin Project編集/削除・AI設定APIキー保存/テスト/クリア・レスポンシブ・キーボード・条件待機で安定化）<br/>✅ 空DBでの Migration→Seed→Verify **11/11 PASS**（再実行実証済み）<br/>✅ レート制限（KVベース）: ログイン10回/minで 429 + Retry-After を実環境実証 |
 
 **検証用ログイン**: 利用者ID `naoki.sato` / パスワード `mirai-demo`（IT・DX管理者）。`k.tanaka`（一般利用者）等も同パスワードでサインインでき、権限差を確認できます。**MVP はヘッダー無しブラウザアクセスでも `naoki.sato` として自動ログインされます**（公開デモ用。復旧は `wrangler.toml` の `[env.mvp.vars]` から `DEMO_DEFAULT_LOGIN_ID` 行を削除して再デプロイ）。
 
