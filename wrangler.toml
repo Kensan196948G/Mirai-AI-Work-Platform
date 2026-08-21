@@ -14,6 +14,11 @@ directory = "./dist"
 not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 
+# レート制限用 KV (アイソレート間で状態共有。in-memory では分散リクエストを数えられない)
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "73e3e98ef7894451afd96649d524fcdc"
+
 [vars]
 # 本番のAI提供者。DEEPSEEK_API_KEY が Secret 登録されるまでは demo
 # (決定的ローカル応答・課金なし) で運用し、主要業務フローを操作可能にする。
@@ -56,6 +61,11 @@ name = "mirai-ai-work-platform-api-mvp"
 routes = [
   { pattern = "ai-work-mvp.mirai-dx-platform.com", custom_domain = true }
 ]
+
+# MVP 用レート制限 KV (本番とは分離)
+[[env.mvp.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "0f3c2b58deb142e28c8206b8ad0e3170"
 
 [env.mvp.triggers]
 crons = []

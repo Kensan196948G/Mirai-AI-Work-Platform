@@ -73,3 +73,58 @@ describe("clientIp", () => {
     expect(clientIp(h)).toBe("unknown");
   });
 });
+
+// ============================================================================
+// KV ベースレートリミッタ (KvRateLimiter) — モックKVで検証
+// ============================================================================
+class MockKv implements import("../worker/src/ratelimit").KvLike {
+  store = new Map<string, string>();
+  async get(key: string, _type: "text"): Promise<string | null> {
+    return this.store.get(key) ?? null;
+  }
+  async put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void> {
+    this.store.set(key, value);
+    void opts;
+  }
+}
+
+describe("KvRateLimiter", () => {
+  it("上限までは許可し、超過は拒否する", async () => {
+    const kv = new MockKv();
+    const rl = new (await import("../worker/src/ratelimit")).KvRateLimiter(kv, 60_000, 3);
+    expect((await rl.check("ip1")).ok).toBe(true);
+    expect((await rl.check("ip1")).ok).toBe(true);
+    expect((await rl.check("ip1")).ok).toBe(true);
+    const fourth = await rl.check("ip1");
+    expect(fourth.ok).toBe(false);
+    expect(fourth.remaining).toBe(0);
+    expect(fourth.retryAfterSec).toBeGreaterThanOrEqual(1);
+  });
+
+  it("IP ごとに独立してカウントする", async () => {
+    const kv = new MockKv();
+    const rl = new (await import("../worker/src/ratelimit")).KvRateLimiter(kv, 60_000, 2);
+    expect((await rl.check("a")).ok).toBe(true);
+    expect((await rl.check("a")).ok).toBe(true);
+    expect((await rl.check("a")).ok).toBe(false);
+    expect((await rl.check("b")).ok).toBe(true);
+  });
+
+  it("窓キーが変わるとリセットされる (窓境界で新カウント)", async () => {
+    const kv = new MockKv();
+    const rl = new (await import("../worker/src/ratelimit")).KvRateLimiter(kv, 60_000, 2);
+    const t0 = 1_000_000;
+    expect((await rl.check("k", t0)).ok).toBe(true);
+    expect((await rl.check("k", t0)).ok).toBe(true);
+    expect((await rl.check("k", t0)).ok).toBe(false);
+    // 次の窓 (60秒後)
+    expect((await rl.check("k", t0 + 60_000)).ok).toBe(true);
+  });
+
+  it("KV 値が壊れていても例外を出さない", async () => {
+    const kv = new MockKv();
+    kv.store.set("k:16", "not-a-number"); // floor(1000000/60000)=16
+    const rl = new (await import("../worker/src/ratelimit")).KvRateLimiter(kv, 60_000, 5);
+    expect((await rl.check("k", 1_000_000)).ok).toBe(true);
+  });
+});
