@@ -1022,6 +1022,15 @@ app.post("/api/v1/admin/users", zValidator("json", adminUserSchema), async (c) =
 
 app.patch("/api/v1/admin/users/:id", zValidator("json", adminUserSchema), async (c) => {
   const body = c.req.valid("json");
+  const self = c.get("user") as AuthUser;
+  if (c.req.param("id") === self.id) {
+    if (body.status && body.status !== "active") {
+      return jsonError(c, 400, "SELF_LOCKOUT", "自分自身のアカウントを停止/警告状態にはできません。他の管理者に依頼してください。", false);
+    }
+    if (body.role && body.role !== "admin") {
+      return jsonError(c, 400, "SELF_LOCKOUT", "自分自身の役割を管理者以外に変更することはできません。他の管理者に依頼してください。", false);
+    }
+  }
   const rows = await db(c)`SELECT * FROM users WHERE id = ${c.req.param("id")} LIMIT 1`;
   if (!rows[0]) return jsonError(c, 404, "NOT_FOUND", "利用者が見つかりません。", false);
   const hash = body.password ? await hashPassword(body.password) : null;

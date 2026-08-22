@@ -110,6 +110,7 @@ function AdminDashboard() {
 // ---- 利用者管理 ----
 interface UserRow extends User { usage_bytes?: number; }
 function AdminUsers({ onToast }: { onToast: (m: string) => void }) {
+  const { user: me } = useApp();
   const [users, setUsers] = useState<UserRow[] | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ login_id: "", display_name: "", password: "", role: "user", quota_gb: "100" });
@@ -135,6 +136,10 @@ function AdminUsers({ onToast }: { onToast: (m: string) => void }) {
   };
 
   const toggleStatus = async (u: UserRow) => {
+    if (u.id === me?.id) {
+      onToast("自分自身のアカウントは停止できません。他の管理者に依頼してください。");
+      return;
+    }
     const next = u.status === "disabled" ? "active" : "disabled";
     await api.patch(`/admin/users/${u.id}`, { status: next });
     onToast(`${u.display_name} を${next === "active" ? "有効化" : "停止"}しました`);
@@ -163,7 +168,11 @@ function AdminUsers({ onToast }: { onToast: (m: string) => void }) {
                     <td className="num">{fmtDateTime(u.last_login_at)}</td>
                     <td>
                       <span className="row-actions">
-                        <button className="iconbtn" aria-label="有効/停止切替" onClick={() => void toggleStatus(u)}>
+                        <button className={`iconbtn${u.id === me?.id ? " iconbtn--disabled" : ""}`}
+                          aria-label={u.id === me?.id ? "自分自身は変更不可" : "有効/停止切替"}
+                          aria-disabled={u.id === me?.id}
+                          title={u.id === me?.id ? "自分自身のアカウントは停止できません" : undefined}
+                          onClick={() => void toggleStatus(u)}>
                           <Icon name={u.status === "disabled" ? "check" : "x"} size={14} />
                         </button>
                       </span>
