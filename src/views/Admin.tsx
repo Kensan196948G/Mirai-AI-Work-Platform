@@ -168,9 +168,11 @@ function AdminUsers({ onToast }: { onToast: (m: string) => void }) {
                     <td className="num">{fmtDateTime(u.last_login_at)}</td>
                     <td>
                       <span className="row-actions">
-                        <button className="iconbtn" aria-label={u.id === me?.id ? "自分自身は変更不可" : "有効/停止切替"}
+                        <button className={`iconbtn${u.id === me?.id ? " iconbtn--disabled" : ""}`}
+                          aria-label={u.id === me?.id ? "自分自身は変更不可" : "有効/停止切替"}
+                          aria-disabled={u.id === me?.id}
                           title={u.id === me?.id ? "自分自身のアカウントは停止できません" : undefined}
-                          disabled={u.id === me?.id} onClick={() => void toggleStatus(u)}>
+                          onClick={() => void toggleStatus(u)}>
                           <Icon name={u.status === "disabled" ? "check" : "x"} size={14} />
                         </button>
                       </span>
