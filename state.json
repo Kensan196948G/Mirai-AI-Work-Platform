@@ -1,7 +1,7 @@
 {
   "project": "Mirai-AI-Work-Platform",
   "repo": "Kensan196948G/Mirai-AI-Work-Platform",
-  "updated_at": "2026-08-21",
+  "updated_at": "2026-08-22",
   "phase": "production",
   "status": {
     "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com",
@@ -14,13 +14,13 @@
     "cloudflare_access": "本番に適用済み (owner-only: kensan1969@gmail.com, 2026-08-20 設定)"
   },
   "verification": {
-    "unit_tests": 62,
+    "unit_tests": 75,
     "api_smoke": "20/20 (MVP)",
     "browser_e2e": "19/19 (MVP)",
     "db_checks": "11/11 (空DB Migration→Seed→Verify 再実行)",
     "verify": "PASS",
     "security_scan": "PASS",
-    "ci": "PASS (PR #5/#6)"
+    "ci": "PASS (PR #11)"
   },
   "prs": {
     "pr1": "squash merged (ee3462e)",
@@ -28,13 +28,28 @@
     "pr3": "squash merged (e1746b5)",
     "pr4": "squash merged (53e34e2)",
     "pr5": "squash merged (f429019)",
-    "pr6": "pending (fix/e2e-mvp-bypass)"
+    "pr6": "squash merged (b348f92)",
+    "pr7": "squash merged (7bce2e9)",
+    "pr8": "squash merged (bbaf8a4)",
+    "pr9": "squash merged (f98d995)",
+    "pr10": "squash merged (d3823fe)",
+    "pr11": "squash merged (86a05b2) — Admin自己ロックアウト防止ガード"
   },
   "ai": {
     "mvp_provider": "demo",
     "prod_provider": "demo",
     "deepseek_key_registered": false
   },
+  "incidents": [
+    {
+      "date": "2026-08-22",
+      "title": "管理者アカウント自己ロックアウト (Admin画面全機能停止)",
+      "cause": "naoki.sato (唯一の管理者) が利用者管理画面で自分自身の行の有効/停止トグルを誤操作し、自アカウントを disabled 化。ログイン不能となりAdmin全タブが機能停止に見えた。",
+      "detection": "監査ログ (LOGIN denied 連続 + 直前の自分自身へのUSER_UPDATE) で特定。",
+      "remediation": "本番DBの当該ユーザーを status=disabled→active へ直接復旧 (スキーマ変更なし)。再発防止として PR #11 でサーバー側 (SELF_LOCKOUT 400) + UI側の自己ロックアウト防止ガードを追加し本番デプロイ済み (worker version c36bb8db-c72a-45a1-a33c-f98115d6b6f9)。",
+      "status": "resolved"
+    }
+  ],
   "residual_risks": [
     "DeepSeek APIキー未登録 — 本番AI有効化には Secret 登録が必要 (現状 demo 運用)",
     "物理 /mnt/storage (10TB HDD) は on-prem 導入時に実装 — クラウドMVPはシミュレーション",
@@ -42,10 +57,11 @@
     "ファイル実体はストレージ層 — クラウドMVPはメタデータ管理",
     "SSO/MFA/OneDrive/SharePoint はスコープ外 (保留)",
     "本番は Cloudflare Access 適用済み (owner-only) — 内部E2Eは Access セッションが必要",
-    "Neon は他プロジェクト (civil-cost-index-dashboard) と同一インスタンスに DB 追加した構成"
+    "Neon は他プロジェクト (civil-cost-index-dashboard) と同一インスタンスに DB 追加した構成",
+    "自己ロックアウト防止ガードは利用者の有効/停止・役割変更のみ対応。Project削除など他の管理操作には未適用 (影響が限定的なため未対応)"
   ],
   "deploy": {
-    "prod_version": "faa6bbb9-b251-48f0-b604-fe8d37283d0f (2026-08-21)",
+    "prod_version": "c36bb8db-c72a-45a1-a33c-f98115d6b6f9 (2026-08-22)",
     "mvp_version": "fa380499-b5e8-4c89-996a-368dee9cb20c (2026-08-21)",
     "prod_url": "https://ai-work.mirai-dx-platform.com",
     "mvp_url": "https://ai-work-mvp.mirai-dx-platform.com"
